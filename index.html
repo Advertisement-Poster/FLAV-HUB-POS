@@ -1803,6 +1803,20 @@
     .order-card { padding: 14px; margin-bottom: 10px; }
     .order-card-header { flex-wrap: wrap; gap: 6px; }
 
+    /* Orders table → card layout on mobile */
+    .orders-table { display: block; }
+    .orders-table thead { display: none; }
+    .orders-table tbody { display: flex; flex-direction: column; gap: 10px; }
+    .orders-table tr {
+      display: flex; flex-wrap: wrap; gap: 4px 10px;
+      background: var(--bg2); border-radius: var(--radius-sm); padding: 12px;
+      border: 1px solid var(--border); position: relative;
+    }
+    .orders-table td { padding: 2px 0; border: none; font-size: 12px; }
+    .orders-table td:nth-child(1) { font-weight: 700; font-size: 13px; }
+    .orders-table td:nth-child(3) { width: 100%; order: 10; color: var(--text2); }
+    .orders-table td:nth-child(7) { font-weight: 700; color: var(--accent); font-size: 14px; margin-left: auto; }
+
     /* INVENTORY VIEW */
     #view-inventory { padding: 14px; }
     .inv-header { flex-wrap: wrap; gap: 8px; }
@@ -2146,6 +2160,12 @@
   }
   .kitchen-card-id { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
   .kitchen-card-table { font-size: 12px; color: var(--text3); }
+  .kitchen-card-product { font-weight: 700; font-size: 15px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .kitchen-card-qty-line { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .kitchen-card-meta { padding: 0 16px 8px; display: flex; gap: 12px; align-items: center; }
+  .kitchen-meta-order { font-family: monospace; font-size: 11px; font-weight: 600; color: var(--text3); background: var(--surface2); padding: 2px 8px; border-radius: 6px; }
+  .kitchen-meta-table { font-size: 11px; color: var(--text3); }
+  .kitchen-product-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
   .kitchen-card-time { font-size: 14px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 1px; }
   .kitchen-card-time.warn { color: var(--accent2) !important; }
   .kitchen-card-time.urgent { color: var(--red) !important; animation: pulse-urgent 1s infinite; }
@@ -2542,6 +2562,7 @@
   <div id="view-inventory">
     <div class="inv-header">
       <div class="inv-title">Inventory</div>
+      <input type="text" id="invSearchBar" class="search-bar" placeholder="🔍 Search products..." oninput="renderInventory()" style="max-width:260px;margin:0 auto 0 12px;padding:7px 14px;font-size:13px;" />
       <button class="add-product-btn" onclick="openAddProduct()">+ Add Product</button>
     </div>
     <div class="inv-grid" id="invGrid"></div>
@@ -2582,7 +2603,7 @@
     <div style="overflow-x:auto;">
       <table class="orders-table" id="monitorTable">
         <thead><tr>
-          <th>Order ID</th><th>Table</th><th>Items</th><th>Qty</th><th>Ordered</th><th>Cooking Started</th><th>Ready</th><th>Served</th><th>Wait → Cook</th><th>Cook → Ready</th><th>Ready → Served</th><th>Total Time</th>
+          <th>Order ID</th><th>Table</th><th>Product</th><th>Qty</th><th>Ordered</th><th>Cooking Started</th><th>Ready</th><th>Served</th><th>Wait → Cook</th><th>Cook → Ready</th><th>Ready → Served</th><th>Total Time</th>
         </tr></thead>
         <tbody id="monitorBody"></tbody>
       </table>
@@ -2628,6 +2649,14 @@
           <div class="settings-nav-info">
             <div class="settings-nav-title">Backup & Export</div>
             <div class="settings-nav-sub">Download all data or restore from backup</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-audit" style="display:none;" onclick="openSettingsPanel('audit')">
+          <div class="settings-nav-icon">📋</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Audit Log</div>
+            <div class="settings-nav-sub">View login, order, void, and discount activity</div>
           </div>
           <span class="settings-nav-arrow">▶</span>
         </div>
@@ -2782,6 +2811,33 @@
             <button class="confirm-btn-action accent" onclick="document.getElementById('restoreFileInput').click()" style="padding:12px;border-radius:var(--radius-sm);">📤 Restore from JSON File</button>
           </div>
         </div>
+
+        <!-- Audit Log Body -->
+        <div id="audit-section-body" class="settings-detail-body">
+          <div class="settings-detail-header">
+            <span style="font-size:20px;">📋</span>
+            <div class="settings-detail-title">Audit Log</div>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <select id="auditFilterAction" onchange="renderAuditLog()" style="padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;">
+                <option value="">All Actions</option>
+                <option value="login">Login</option>
+                <option value="login_failed">Login Failed</option>
+                <option value="logout">Logout</option>
+                <option value="order_placed">Order Placed</option>
+                <option value="order_voided">Order Voided</option>
+                <option value="order_deleted">Order Deleted</option>
+                <option value="discount_authorized">Discount Auth</option>
+                <option value="user_created">User Created</option>
+                <option value="user_updated">User Updated</option>
+              </select>
+              <button class="export-btn" onclick="renderAuditLog()" style="font-size:11px;">🔄 Refresh</button>
+              <button class="export-btn" onclick="exportAuditCSV()" style="font-size:11px;">📥 Export CSV</button>
+            </div>
+            <div id="auditLogContent" style="max-height:420px;overflow-y:auto;font-size:12px;"></div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -2885,6 +2941,14 @@
       <button class="pay-method" data-method="Card" onclick="selectPayment(this)">💳 Card</button>
       <button class="pay-method" data-method="GCash" onclick="selectPayment(this)">📱 GCash</button>
       <button class="pay-method" data-method="Maya" onclick="selectPayment(this)">📲 Maya</button>
+      <button class="pay-method" id="splitPayBtn" onclick="toggleSplitPayment()" style="background:var(--bg2);border:1px dashed var(--accent);font-size:12px;">✂️ Split</button>
+    </div>
+    <!-- Split Payment UI -->
+    <div id="splitPaySection" style="display:none;padding:10px 0;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">✂️ Split Payment</div>
+      <div id="splitPayLines"></div>
+      <button onclick="addSplitLine()" style="margin-top:6px;padding:5px 14px;font-size:11px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text2);cursor:pointer;">+ Add Payment</button>
+      <div id="splitPayRemaining" style="font-size:12px;margin-top:6px;color:var(--text3);"></div>
     </div>
     <!-- Cash input -->
     <div class="payment-detail visible" id="pay-cash-detail">
@@ -3083,6 +3147,21 @@ function loadLocal(key) {
   try { const d = localStorage.getItem('kainpos_' + key); return d ? JSON.parse(d) : null; } catch(e) { return null; }
 }
 
+// =====================================================================
+// PASSWORD HASHING (SHA-256 via Web Crypto)
+// =====================================================================
+async function hashPassword(plain) {
+  const encoded = new TextEncoder().encode(plain + '_kainpos_salt_2026');
+  const buf = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPassword(plain, hashed) {
+  // Support legacy plain-text passwords during migration
+  if (!hashed || hashed.length !== 64) return plain === hashed;
+  return (await hashPassword(plain)) === hashed;
+}
+
 
 
 // =====================================================================
@@ -3215,6 +3294,14 @@ async function deleteProductFromFirestore(firestoreId) {
 async function updateStockInFirestore(firestoreId, newStock) {
   if (!firebaseReady) return;
   await db.ref('inventory/' + firestoreId + '/stock').set(newStock);
+}
+
+async function deductStockAtomic(firestoreId, qty) {
+  if (!firebaseReady) return;
+  await db.ref('inventory/' + firestoreId + '/stock').transaction(current => {
+    if (current === null) return 0;
+    return Math.max(0, current - qty);
+  });
 }
 
 async function updateVisibilityInFirestore(firestoreId, visible) {
@@ -3431,6 +3518,7 @@ function startRealtimeListeners() {
       const gotNewOrder = newPending > _lastKitchenPendingCount;
       _lastKitchenPendingCount = newPending;
       kitchenOrders = fbKitchen;
+      migrateKitchenOrders();
       saveLocal('kitchenOrders', kitchenOrders);
       renderKitchen();
       checkLowStock();
@@ -3555,8 +3643,8 @@ function applyBusinessConfig() {
 
 let activeSettingsPanel = null;
 function openSettingsPanel(section) {
-  const panels = { business: 'business-section-body', users: 'users-section-body', categories: 'cat-section-body', backup: 'backup-section-body' };
-  const navItems = { business: 'settings-nav-business', users: 'settings-nav-users', categories: 'settings-nav-categories', backup: 'settings-nav-backup' };
+  const panels = { business: 'business-section-body', users: 'users-section-body', categories: 'cat-section-body', backup: 'backup-section-body', audit: 'audit-section-body' };
+  const navItems = { business: 'settings-nav-business', users: 'settings-nav-users', categories: 'settings-nav-categories', backup: 'settings-nav-backup', audit: 'settings-nav-audit' };
   // If clicking the already-active panel, close it
   if (activeSettingsPanel === section) {
     document.getElementById(panels[section]).classList.remove('active');
@@ -3589,12 +3677,40 @@ function openSettingsPanel(section) {
     renderUsersList();
   } else if (section === 'categories') {
     renderCategoryList();
+  } else if (section === 'audit') {
+    renderAuditLog();
   }
 }
 // Legacy compat wrappers
 function toggleBusinessSection() { openSettingsPanel('business'); }
 function toggleUsersSection() { openSettingsPanel('users'); }
 function toggleCategorySection() { openSettingsPanel('categories'); }
+
+function renderAuditLog() {
+  const el = document.getElementById('auditLogContent');
+  if (!el) return;
+  const filterVal = document.getElementById('auditFilterAction').value;
+  let logs = JSON.parse(localStorage.getItem('kainpos_auditLog') || '[]');
+  if (filterVal) logs = logs.filter(l => l.action === filterVal);
+  if (!logs.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">No audit entries found.</div>'; return; }
+  const actionColors = { login:'#22c55e', login_failed:'#ef4444', logout:'#a855f7', order_placed:'#3b82f6', order_voided:'#f59e0b', order_deleted:'#ef4444', discount_authorized:'#06b6d4', user_created:'#22c55e', user_updated:'#f59e0b' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:var(--bg2);"><th style="padding:6px 8px;text-align:left;font-size:11px;border-bottom:1px solid var(--border);">Time</th><th style="padding:6px 8px;text-align:left;font-size:11px;border-bottom:1px solid var(--border);">Action</th><th style="padding:6px 8px;text-align:left;font-size:11px;border-bottom:1px solid var(--border);">User</th><th style="padding:6px 8px;text-align:left;font-size:11px;border-bottom:1px solid var(--border);">Details</th></tr></thead><tbody>${logs.map(l => {
+    const c = actionColors[l.action] || 'var(--text3)';
+    const details = Object.entries(l).filter(([k]) => !['action','user','role','time','ts'].includes(k)).map(([k,v]) => `${esc(k)}: ${esc(v)}`).join(', ');
+    return `<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 8px;white-space:nowrap;color:var(--text3);">${esc(l.time||'')}</td><td style="padding:5px 8px;"><span style="background:${c}22;color:${c};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${esc(l.action)}</span></td><td style="padding:5px 8px;">${esc(l.user||'')} <span style="color:var(--text3);font-size:10px;">${esc(l.role||'')}</span></td><td style="padding:5px 8px;color:var(--text2);max-width:220px;overflow:hidden;text-overflow:ellipsis;">${details}</td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function exportAuditCSV() {
+  const logs = JSON.parse(localStorage.getItem('kainpos_auditLog') || '[]');
+  if (!logs.length) { showToast('No audit data to export.'); return; }
+  const allKeys = new Set();
+  logs.forEach(l => Object.keys(l).forEach(k => allKeys.add(k)));
+  const cols = ['time','action','user','role',...[...allKeys].filter(k => !['time','action','user','role','ts'].includes(k))];
+  const csv = [cols.join(','), ...logs.map(l => cols.map(c => `"${String(l[c]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  downloadCSV('audit_log_' + new Date().toISOString().slice(0,10) + '.csv', csv);
+  showToast('📥 Audit log exported');
+}
 
 async function saveBusinessConfig() {
   showSpinner('Saving settings…');
@@ -3899,11 +4015,18 @@ async function authorizeDiscount(source) {
       try {
         const snap = await withTimeout(db.ref('users').orderByChild('username').equalTo(userInput).once('value'), 6000);
         if (snap.exists()) {
-          snap.forEach(child => { const u = child.val(); if (u.password === passInput) userData = { firestoreId: child.key, ...u }; });
+          for (const key of Object.keys(snap.val())) {
+            const u = snap.val()[key];
+            if (await verifyPassword(passInput, u.password)) { userData = { firestoreId: key, ...u }; break; }
+          }
         }
       } catch(e) { console.warn('RTDB auth lookup failed, using local:', e); }
     }
-    if (!userData) userData = users.find(u => u.username === userInput && u.password === passInput) || null;
+    if (!userData) {
+      for (const u of users) {
+        if (u.username === userInput && await verifyPassword(passInput, u.password)) { userData = u; break; }
+      }
+    }
     if (!userData) {
       statusEl.textContent = '❌ Invalid credentials'; statusEl.className = 'discount-auth-status fail';
       btn.disabled = false; btn.textContent = 'Verify & Authorize'; return;
@@ -3914,6 +4037,7 @@ async function authorizeDiscount(source) {
     }
     discountAuthorized = true;
     discountAuthorizer = { username: userData.username, name: userData.name, role: userData.role };
+    logAudit('discount_authorized', { authorizer: userData.username, type: isSenior ? 'senior' : 'manual' });
     statusEl.textContent = `✅ Authorized by ${userData.name} (${userData.role})`;
     statusEl.className = 'discount-auth-status ok';
     btn.textContent = 'Verified ✔';
@@ -4063,6 +4187,11 @@ function openCheckout() {
   document.getElementById('pay-maya-ref').value = '';
   document.getElementById('pay-cash-change').textContent = '';
   document.getElementById('pay-error').style.display = 'none';
+  // Reset split payment
+  isSplitPayment = false; splitLines = [];
+  document.getElementById('splitPaySection').style.display = 'none';
+  document.getElementById('splitPayBtn').classList.remove('active');
+  document.querySelectorAll('.pay-method:not(#splitPayBtn)').forEach(b => { b.style.opacity = ''; b.style.pointerEvents = ''; });
   // Reset discount
   resetDiscountState();
   document.getElementById('discountSection').style.display = '';
@@ -4100,6 +4229,78 @@ function calcChange() {
   } else {
     changeEl.textContent = `Short: ₱${(total - cash).toLocaleString('en',{minimumFractionDigits:2})}`;
     changeEl.className = 'payment-change insufficient';
+  }
+}
+
+let isSplitPayment = false;
+let splitLines = [];
+
+function toggleSplitPayment() {
+  isSplitPayment = !isSplitPayment;
+  const sec = document.getElementById('splitPaySection');
+  const btn = document.getElementById('splitPayBtn');
+  if (isSplitPayment) {
+    sec.style.display = '';
+    btn.classList.add('active');
+    // Hide single payment details
+    ['pay-cash-detail','pay-card-detail','pay-gcash-detail','pay-maya-detail'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    document.querySelectorAll('.pay-method:not(#splitPayBtn)').forEach(b => { b.classList.remove('active'); b.style.opacity = '.4'; b.style.pointerEvents = 'none'; });
+    splitLines = [{ method: 'Cash', amount: '', ref: '' }, { method: 'GCash', amount: '', ref: '' }];
+    renderSplitLines();
+  } else {
+    sec.style.display = 'none';
+    btn.classList.remove('active');
+    document.querySelectorAll('.pay-method:not(#splitPayBtn)').forEach(b => { b.style.opacity = ''; b.style.pointerEvents = ''; });
+    // Restore single payment
+    selectPayment(document.querySelector('.pay-method[data-method="Cash"]'));
+    splitLines = [];
+  }
+}
+
+function addSplitLine() {
+  splitLines.push({ method: 'Cash', amount: '', ref: '' });
+  renderSplitLines();
+}
+
+function removeSplitLine(idx) {
+  splitLines.splice(idx, 1);
+  renderSplitLines();
+}
+
+function updateSplitLine(idx, field, value) {
+  splitLines[idx][field] = value;
+  updateSplitRemaining();
+}
+
+function renderSplitLines() {
+  const el = document.getElementById('splitPayLines');
+  el.innerHTML = splitLines.map((line, i) => `
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <select onchange="updateSplitLine(${i},'method',this.value)" style="padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;flex:0 0 90px;">
+        <option value="Cash" ${line.method==='Cash'?'selected':''}>💵 Cash</option>
+        <option value="Card" ${line.method==='Card'?'selected':''}>💳 Card</option>
+        <option value="GCash" ${line.method==='GCash'?'selected':''}>📱 GCash</option>
+        <option value="Maya" ${line.method==='Maya'?'selected':''}>📲 Maya</option>
+      </select>
+      <input type="number" min="0" placeholder="₱ Amount" value="${line.amount}" oninput="updateSplitLine(${i},'amount',this.value)" style="padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;flex:1;min-width:0;" />
+      <input type="text" placeholder="Ref #" value="${esc(line.ref)}" oninput="updateSplitLine(${i},'ref',this.value)" style="padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;flex:1;min-width:0;${line.method==='Cash'?'display:none;':''}" />
+      ${splitLines.length > 1 ? `<button onclick="removeSplitLine(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>` : ''}
+    </div>
+  `).join('');
+  updateSplitRemaining();
+}
+
+function updateSplitRemaining() {
+  const { total } = getCheckoutTotal();
+  const paid = splitLines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+  const remaining = total - paid;
+  const el = document.getElementById('splitPayRemaining');
+  if (remaining > 0.01) {
+    el.innerHTML = `<span style="color:var(--red);">Remaining: ₱${remaining.toLocaleString('en',{minimumFractionDigits:2})}</span>`;
+  } else if (remaining < -0.01) {
+    el.innerHTML = `<span style="color:var(--green);">Overpaid by ₱${Math.abs(remaining).toLocaleString('en',{minimumFractionDigits:2})}</span>`;
+  } else {
+    el.innerHTML = `<span style="color:var(--green);">✓ Fully covered</span>`;
   }
 }
 
@@ -4144,7 +4345,29 @@ function confirmOrder() {
   let paymentRef = '';
   let cashTendered = 0;
   let change = 0;
-  if (selectedPayment === 'Cash') {
+  let splitPaymentsData = null;
+
+  if (isSplitPayment) {
+    // Validate split payment
+    const totalPaid = splitLines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+    if (totalPaid < total - 0.01) {
+      errEl.textContent = `Split payment total (₱${totalPaid.toFixed(2)}) is less than order total (₱${total.toFixed(2)}).`;
+      errEl.style.display = 'block'; return;
+    }
+    for (let i = 0; i < splitLines.length; i++) {
+      const sl = splitLines[i];
+      if (!sl.amount || parseFloat(sl.amount) <= 0) {
+        errEl.textContent = `Payment line ${i+1}: enter an amount.`;
+        errEl.style.display = 'block'; return;
+      }
+      if (sl.method !== 'Cash' && !sl.ref.trim()) {
+        errEl.textContent = `Payment line ${i+1} (${sl.method}): enter a reference #.`;
+        errEl.style.display = 'block'; return;
+      }
+    }
+    splitPaymentsData = splitLines.map(l => ({ method: l.method, amount: parseFloat(l.amount), ref: l.ref.trim() || null }));
+    change = totalPaid - total;
+  } else if (selectedPayment === 'Cash') {
     cashTendered = parseFloat(document.getElementById('pay-cash-amount').value) || 0;
     if (cashTendered < total) {
       errEl.textContent = cashTendered <= 0 ? 'Please enter the cash amount.' : 'Cash amount is not enough.';
@@ -4176,13 +4399,13 @@ function confirmOrder() {
   }
   errEl.style.display = 'none';
 
-  // Deduct stock locally + write to Firestore
+  // Deduct stock locally + write to Firestore (atomic)
   const stockUpdates = [];
   cart.forEach(row => {
     const inv = inventory.find(i => i.firestoreId === row.firestoreId);
     if (inv) {
       inv.stock = Math.max(0, inv.stock - row.qty);
-      stockUpdates.push(updateStockInFirestore(inv.firestoreId, inv.stock));
+      stockUpdates.push(deductStockAtomic(inv.firestoreId, row.qty));
     }
   });
 
@@ -4201,10 +4424,11 @@ function confirmOrder() {
     vatExempt: vatExempt || null,
     tax,
     total,
-    payment: selectedPayment,
+    payment: isSplitPayment ? 'Split' : selectedPayment,
     paymentRef: paymentRef || null,
-    cashTendered: selectedPayment === 'Cash' ? cashTendered : null,
-    change: selectedPayment === 'Cash' ? change : null,
+    cashTendered: selectedPayment === 'Cash' && !isSplitPayment ? cashTendered : null,
+    change: (selectedPayment === 'Cash' && !isSplitPayment) || isSplitPayment ? change : null,
+    splitPayments: splitPaymentsData,
     seniorInfo: activeDiscount === 'senior' ? seniorInfo : null,
     manualDiscountInfo: activeDiscount === 'manual' ? manualDiscountInfo : null,
     processedBy: currentUser ? { username: currentUser.username, name: currentUser.name, role: currentUser.role } : null,
@@ -4223,20 +4447,25 @@ function confirmOrder() {
   orderHistory.unshift(order);
   saveLocal('orders', orderHistory);
   saveLocal('inventory', inventory);
+  _salesCache.key = null; // Invalidate sales cache
 
   // Send to kitchen display
   addToKitchen(order);
   // Check low stock after deduction
   checkLowStock();
+  logAudit('order_placed', { orderId: order.id, table, total: order.total, payment: selectedPayment });
 
   // Success state
   document.getElementById('modalIcon').innerHTML = '<span class="success-anim">✅</span>';
   document.getElementById('modalTitle').textContent = 'Order Placed!';
-  let successSub = `Paid via ${selectedPayment} — ${table}`;
+  let successSub = isSplitPayment ? `Split Payment — ${table}` : `Paid via ${selectedPayment} — ${table}`;
   if (discount > 0) {
     successSub += `\n${activeDiscount === 'senior' ? '👴 Senior Discount' : '🏷️ Manual Discount'}: −₱${discount.toLocaleString('en',{minimumFractionDigits:2})}`;
   }
-  if (selectedPayment === 'Cash') {
+  if (isSplitPayment) {
+    splitLines.forEach(l => { successSub += `\n${l.method}: ₱${parseFloat(l.amount).toLocaleString('en',{minimumFractionDigits:2})}${l.ref ? ' (Ref: '+l.ref+')' : ''}`; });
+    if (change > 0.01) successSub += `\nChange: ₱${change.toLocaleString('en',{minimumFractionDigits:2})}`;
+  } else if (selectedPayment === 'Cash') {
     successSub += `\nChange: ₱${change.toLocaleString('en',{minimumFractionDigits:2})}`;
   } else if (paymentRef) {
     successSub += `\nRef: ${paymentRef}`;
@@ -4251,6 +4480,8 @@ function confirmOrder() {
   document.getElementById('pay-gcash-detail').classList.remove('visible');
   document.getElementById('pay-maya-detail').classList.remove('visible');
   document.getElementById('pay-error').style.display = 'none';
+  document.getElementById('splitPaySection').style.display = 'none';
+  isSplitPayment = false; splitLines = [];
   // Hide discount section
   document.getElementById('discountSection').style.display = 'none';
   document.getElementById('modalTotalFinal').style.display = 'none';
@@ -4296,7 +4527,12 @@ function printReceipt(order, payInfo) {
   }
 
   let payDetails = '';
-  if (order.payment === 'Cash') {
+  if (order.splitPayments && order.splitPayments.length) {
+    payDetails = order.splitPayments.map(sp =>
+      `<tr><td colspan="3">${sp.method}</td><td style="text-align:right;">${fmt(sp.amount)}${sp.ref ? ' <span style="font-size:9px;color:#666;">('+sp.ref+')</span>' : ''}</td></tr>`
+    ).join('');
+    if (order.change && order.change > 0.01) payDetails += `<tr><td colspan="3"><strong>Change</strong></td><td style="text-align:right;"><strong>${fmt(order.change)}</strong></td></tr>`;
+  } else if (order.payment === 'Cash') {
     payDetails = `<tr><td colspan="3">Cash Tendered</td><td style="text-align:right;">${fmt(payInfo.cashTendered)}</td></tr>
       <tr><td colspan="3"><strong>Change</strong></td><td style="text-align:right;"><strong>${fmt(payInfo.change)}</strong></td></tr>`;
   } else if (payInfo.paymentRef) {
@@ -4421,7 +4657,14 @@ function filterOrdersByRange(startDate, endDate) {
   });
 }
 
+const _salesCache = { key: null, ts: 0, result: null };
+const SALES_CACHE_TTL = 300000; // 5 minutes
+
 function getSalesStats(orders) {
+  // Cache key: order count + last order id
+  const cacheKey = orders.length + '_' + (orders[0] ? orders[0].id : '') + '_' + (orders[orders.length-1] ? orders[orders.length-1].id : '');
+  const now = Date.now();
+  if (_salesCache.key === cacheKey && (now - _salesCache.ts) < SALES_CACHE_TTL) return _salesCache.result;
   const totalSales = orders.reduce((s, o) => s + (o.total || 0), 0);
   const totalOrders = orders.length;
   const totalDiscount = orders.reduce((s, o) => s + (o.discount || 0), 0);
@@ -4446,7 +4689,9 @@ function getSalesStats(orders) {
     });
   });
   const topItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  return { totalSales, totalOrders, totalDiscount, totalTax, avgOrder, byCash, byCard, byGCash, byMaya, topItems, itemCustomers };
+  const result = { totalSales, totalOrders, totalDiscount, totalTax, avgOrder, byCash, byCard, byGCash, byMaya, topItems, itemCustomers };
+  _salesCache.key = cacheKey; _salesCache.ts = Date.now(); _salesCache.result = result;
+  return result;
 }
 
 function renderSalesDashboard() {
@@ -5723,11 +5968,15 @@ function exportHistoryCSV() {
 // =====================================================================
 function renderInventory() {
   const grid = document.getElementById('invGrid');
-  if (!inventory.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);">No products yet. Add one above.</div>`;
+  const searchEl = document.getElementById('invSearchBar');
+  const searchTerm = (searchEl ? searchEl.value : '').toLowerCase().trim();
+  let filtered = inventory;
+  if (searchTerm) filtered = inventory.filter(item => item.name.toLowerCase().includes(searchTerm) || (item.cat||'').toLowerCase().includes(searchTerm));
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);">${searchTerm ? 'No products match your search.' : 'No products yet. Add one above.'}</div>`;
     return;
   }
-  grid.innerHTML = inventory.map(item => {
+  grid.innerHTML = filtered.map(item => {
     const maxStock = Math.max(30, item.stock);
     const pct = Math.min(100, (item.stock / maxStock) * 100);
     let fillColor = 'var(--green)', numColor = 'var(--green)';
@@ -6129,12 +6378,29 @@ async function seedDefaultAdmin() {
   }
 }
 
+// =====================================================================
+// LOGIN RATE LIMITING
+// =====================================================================
+let loginAttempts = 0;
+let loginLockUntil = 0;
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 3 * 60 * 1000; // 3 minutes
+
 async function doLogin() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   if (!username || !password) { errEl.textContent = 'Please enter username and password.'; errEl.style.display = 'block'; return; }
+
+  // Rate limiting check
+  if (Date.now() < loginLockUntil) {
+    const secs = Math.ceil((loginLockUntil - Date.now()) / 1000);
+    errEl.textContent = `⏳ Too many failed attempts. Try again in ${secs}s.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Signing in…';
   errEl.style.display = 'none';
 
@@ -6144,27 +6410,53 @@ async function doLogin() {
     try {
       const snap = await withTimeout(db.ref('users').orderByChild('username').equalTo(username).once('value'), 5000);
       if (snap.exists()) {
-        snap.forEach(child => {
-          const u = child.val();
-          if (u.password === password) found = { firestoreId: child.key, ...u };
-        });
+        for (const key of Object.keys(snap.val())) {
+          const u = snap.val()[key];
+          if (await verifyPassword(password, u.password)) {
+            found = { firestoreId: key, ...u };
+            break;
+          }
+        }
       }
     } catch(e) { console.warn('RTDB login failed, using local:', e); }
   }
   // Fallback to localStorage
-  if (!found) found = users.find(u => u.username === username && u.password === password) || null;
-  // Fallback to default admin
-  if (!found && username === 'admin' && password === 'admin123') {
-    found = { firestoreId: 'admin', username: 'admin', name: 'Administrator', role: 'admin', permissions: ROLE_DEFAULTS.admin };
+  if (!found) {
+    for (const u of users) {
+      if (u.username === username && await verifyPassword(password, u.password)) {
+        found = u;
+        break;
+      }
+    }
   }
 
   if (!found) {
-    errEl.textContent = 'Invalid username or password.';
+    loginAttempts++;
+    if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+      loginLockUntil = Date.now() + LOGIN_LOCKOUT_MS;
+      errEl.textContent = `⛔ Account locked for 3 minutes after ${MAX_LOGIN_ATTEMPTS} failed attempts.`;
+      loginAttempts = 0;
+    } else {
+      errEl.textContent = `Invalid username or password. (${MAX_LOGIN_ATTEMPTS - loginAttempts} attempts left)`;
+    }
     errEl.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Sign In';
+    logAudit('login_failed', { username });
     return;
   }
+  loginAttempts = 0;
   currentUser = { firestoreId: found.firestoreId, username: found.username, name: found.name, role: found.role, permissions: found.permissions || null };
+  logAudit('login', { username: found.username, role: found.role });
+  // Migrate plain-text password to hash if needed
+  if (found.password && found.password.length !== 64) {
+    const hashed = await hashPassword(password);
+    found.password = hashed;
+    const localUser = users.find(u => u.firestoreId === found.firestoreId);
+    if (localUser) { localUser.password = hashed; saveLocal('users', users); }
+    if (firebaseReady && db && found.firestoreId) {
+      db.ref('users/' + found.firestoreId + '/password').set(hashed).catch(() => {});
+    }
+  }
   onLoginSuccess();
 }
 
@@ -6201,9 +6493,12 @@ function applyRoleUI() {
   // Settings: show/hide users section
   const usersNavItem = document.getElementById('settings-nav-users');
   if (usersNavItem) usersNavItem.style.display = perms.includes('manageUsers') ? '' : 'none';
+  const auditNavItem = document.getElementById('settings-nav-audit');
+  if (auditNavItem) auditNavItem.style.display = ['admin','manager'].includes(currentUser.role) ? '' : 'none';
 }
 
 function doLogout() {
+  if (currentUser) logAudit('logout', { username: currentUser.username });
   currentUser = null;
   cart = [];
   document.getElementById('login-screen').classList.remove('hidden');
@@ -6318,7 +6613,7 @@ function closeAddUser() {
 
 async function saveNewUser() {
   const username = document.getElementById('new-user-username').value.trim();
-  const password = document.getElementById('new-user-password').value.trim();
+  const passwordRaw = document.getElementById('new-user-password').value.trim();
   const name = document.getElementById('new-user-name').value.trim();
   const role = document.getElementById('new-user-role').value;
   const permissions = getSelectedPerms();
@@ -6331,12 +6626,12 @@ async function saveNewUser() {
       user.name = name;
       user.role = role;
       user.permissions = permissions;
-      if (password) user.password = password;
+      if (passwordRaw) user.password = await hashPassword(passwordRaw);
     }
     if (firebaseReady && db) {
       try {
         const updateData = { name, role, permissions };
-        if (password) updateData.password = password;
+        if (passwordRaw) updateData.password = await hashPassword(passwordRaw);
         await db.ref('users/' + editingUserId).update(updateData);
       } catch(e) { console.warn('RTDB user update failed:', e); }
     }
@@ -6353,12 +6648,14 @@ async function saveNewUser() {
     closeAddUser();
     renderUsersList();
     showToast(`✅ "${name}" updated`);
+    logAudit('user_updated', { targetUser: username || user?.username, role });
   } else {
     // Add mode
-    if (!username || !password || !name || !role) { showToast('🔴 Fill in all user fields'); return; }
+    if (!username || !passwordRaw || !name || !role) { showToast('🔴 Fill in all user fields'); return; }
     if (!permissions.length) { showToast('🔴 Select at least one permission'); return; }
     if (users.find(u => u.username === username)) { showToast('🔴 Username already taken'); return; }
-    const newUser = { username, password, name, role, permissions };
+    const hashedPw = await hashPassword(passwordRaw);
+    const newUser = { username, password: hashedPw, name, role, permissions };
     if (firebaseReady && db) {
       try {
         const ref = db.ref('users').push();
@@ -6371,6 +6668,7 @@ async function saveNewUser() {
     closeAddUser();
     renderUsersList();
     showToast(`✅ "${name}" added as ${role}`);
+    logAudit('user_created', { targetUser: username, role });
   }
 }
 
@@ -6449,6 +6747,7 @@ function loadFromLocalFallback() {
     Object.assign(businessConfig, cachedBiz);
   }
   kitchenOrders = loadLocal('kitchenOrders') || [];
+  migrateKitchenOrders();
   applyBusinessConfig();
 }
 
@@ -6459,6 +6758,30 @@ function esc(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+// =====================================================================
+// AUDIT LOG
+// =====================================================================
+function logAudit(action, details = {}) {
+  const entry = {
+    action,
+    user: currentUser ? currentUser.username : 'system',
+    role: currentUser ? currentUser.role : '',
+    time: new Date().toISOString(),
+    ts: Date.now(),
+    ...details
+  };
+  // Save locally
+  const log = loadLocal('auditLog') || [];
+  log.unshift(entry);
+  // Keep last 500 entries locally
+  if (log.length > 500) log.length = 500;
+  saveLocal('auditLog', log);
+  // Save to Firebase
+  if (firebaseReady && db) {
+    db.ref('auditLog').push(entry).catch(() => {});
+  }
 }
 
 // =====================================================================
@@ -6539,7 +6862,10 @@ async function confirmVoidOrder() {
   if (!reason) { errEl.textContent = 'Please enter a reason.'; errEl.style.display = 'block'; return; }
   if (!authUser || !authPass) { errEl.textContent = 'Manager/supervisor approval required.'; errEl.style.display = 'block'; return; }
   // Find authorizer
-  const authorizer = users.find(u => u.username === authUser && u.password === authPass);
+  let authorizer = null;
+  for (const u of users) {
+    if (u.username === authUser && await verifyPassword(authPass, u.password)) { authorizer = u; break; }
+  }
   if (!authorizer || !['admin','manager','supervisor'].includes(authorizer.role)) {
     errEl.textContent = 'Invalid credentials or insufficient role.';
     errEl.style.display = 'block';
@@ -6574,7 +6900,16 @@ async function confirmVoidOrder() {
   renderInventory();
   renderMenu();
   checkLowStock();
+  // Sync void to kitchen — remove or mark kitchen items for this order
+  const hadKitchenItems = kitchenOrders.length;
+  kitchenOrders = kitchenOrders.filter(k => k.orderId !== pendingVoidOrderId);
+  if (kitchenOrders.length !== hadKitchenItems) {
+    saveLocal('kitchenOrders', kitchenOrders);
+    if (firebaseReady) syncKitchenToFirebase();
+    renderKitchen();
+  }
   showToast(`🚫 Order ${pendingVoidOrderId} voided`);
+  logAudit('order_voided', { orderId: pendingVoidOrderId, reason, authorizer: authorizer.username });
 }
 
 // Delete order permanently from history (admin/manager only)
@@ -6597,16 +6932,18 @@ async function deleteOrderFromHistory(orderId) {
         if (Object.keys(updates).length) await db.ref('orders').update(updates);
       } catch(e) { console.warn('Firebase delete failed:', e); }
     }
-    // Also remove from kitchen orders if present
-    const ko = JSON.parse(localStorage.getItem('kainpos_kitchenOrders') || '{}');
-    if (ko.orders) {
-      ko.orders = ko.orders.filter(o => o.orderId !== orderId);
-      localStorage.setItem('kainpos_kitchenOrders', JSON.stringify(ko));
+    // Also remove from kitchen orders if present (per-item entries use orderId)
+    const hadKitchen = kitchenOrders.length;
+    kitchenOrders = kitchenOrders.filter(o => o.orderId !== orderId);
+    if (kitchenOrders.length !== hadKitchen) {
+      saveLocal('kitchenOrders', kitchenOrders);
       if (firebaseReady) syncKitchenToFirebase();
+      renderKitchen();
     }
     hideSpinner();
     renderOrders();
     showToast(`🗑️ Order ${esc(orderId)} permanently deleted`);
+    logAudit('order_deleted', { orderId });
   });
 }
 
@@ -6668,97 +7005,165 @@ function updateKitchenAlertUI() {
 }
 
 let kitchenOrders = [];
+
+// Migrate old per-order kitchen entries to per-item format
+function migrateKitchenOrders() {
+  let changed = false;
+  const migrated = [];
+  kitchenOrders.forEach(o => {
+    if (o.kitchenItemId) {
+      migrated.push(o); // already new format
+    } else if (o.itemDetails && Array.isArray(o.itemDetails)) {
+      // Old format: explode into per-item entries
+      o.itemDetails.forEach((it, idx) => {
+        migrated.push({
+          kitchenItemId: (o.id || 'OLD') + '_' + idx,
+          orderId: o.id || '',
+          table: o.table || '',
+          name: it.name || '',
+          emoji: it.emoji || '',
+          photo: it.photo || null,
+          qty: it.qty || 1,
+          price: it.price || 0,
+          kitchenStatus: o.kitchenStatus || 'pending',
+          addedAt: o.addedAt || Date.now(),
+          cookingAt: o.cookingAt || null,
+          readyAt: o.readyAt || null,
+          servedAt: o.servedAt || null
+        });
+      });
+      changed = true;
+    } else {
+      // Has no kitchenItemId and no itemDetails — assign one
+      o.kitchenItemId = o.kitchenItemId || (o.orderId || o.id || 'X') + '_0';
+      if (!o.orderId && o.id) o.orderId = o.id;
+      if (!o.name) o.name = 'Unknown Item';
+      migrated.push(o);
+      changed = true;
+    }
+  });
+  if (changed) {
+    kitchenOrders = migrated;
+    saveLocal('kitchenOrders', kitchenOrders);
+    syncKitchenToFirebase();
+  }
+}
+
 function addToKitchen(order) {
-  kitchenOrders.unshift({ ...order, kitchenStatus: 'pending', addedAt: Date.now() });
-  // Keep max 200 orders for monitoring history; trim oldest served beyond limit
-  if (kitchenOrders.length > 200) {
+  // Explode order into per-item kitchen entries — each product gets its own card & timer
+  const items = order.itemDetails || [];
+  items.forEach((it, idx) => {
+    kitchenOrders.unshift({
+      kitchenItemId: order.id + '_' + idx,
+      orderId: order.id,
+      table: order.table,
+      name: it.name,
+      emoji: it.emoji || '',
+      photo: it.photo || null,
+      qty: it.qty || 1,
+      price: it.price || 0,
+      kitchenStatus: 'pending',
+      addedAt: Date.now()
+    });
+  });
+  // Keep max 500 items for monitoring; trim oldest served beyond limit
+  if (kitchenOrders.length > 500) {
     const served = kitchenOrders.filter(o => o.kitchenStatus === 'served');
     const active = kitchenOrders.filter(o => o.kitchenStatus !== 'served');
-    kitchenOrders = [...active, ...served.slice(0, 200 - active.length)];
+    kitchenOrders = [...active, ...served.slice(0, 500 - active.length)];
   }
   saveLocal('kitchenOrders', kitchenOrders);
   syncKitchenToFirebase();
   renderKitchen();
   playKitchenAlert();
-  // Flash the new card briefly
+  // Flash the new cards briefly
   setTimeout(() => {
-    const firstCard = document.querySelector('.kitchen-card');
-    if (firstCard) { firstCard.classList.add('new-order'); setTimeout(() => firstCard.classList.remove('new-order'), 2000); }
+    document.querySelectorAll('.kitchen-card.new-order-flag').forEach(el => {
+      el.classList.add('new-order');
+      setTimeout(() => { el.classList.remove('new-order'); el.classList.remove('new-order-flag'); }, 2000);
+    });
   }, 50);
 }
 
 function renderKitchen() {
   const grid = document.getElementById('kitchenGrid');
   const statsEl = document.getElementById('kitchenStats');
+  // Ensure all items have kitchenItemId (handles Firebase-synced old data)
+  kitchenOrders.forEach((o, i) => {
+    if (!o.kitchenItemId) {
+      o.kitchenItemId = (o.orderId || o.id || 'X') + '_' + i;
+      if (!o.orderId && o.id) o.orderId = o.id;
+    }
+  });
   const active = kitchenOrders.filter(o => o.kitchenStatus !== 'served');
   const pending = active.filter(o => o.kitchenStatus === 'pending');
   const cooking = active.filter(o => o.kitchenStatus === 'cooking');
   const ready = active.filter(o => o.kitchenStatus === 'ready');
-  const countItems = arr => arr.reduce((sum, o) => sum + (o.itemDetails || []).reduce((s, i) => s + (i.qty || 1), 0), 0);
-  document.getElementById('kitchenOrderCount').textContent = active.length + ' active order' + (active.length !== 1 ? 's' : '');
+  const countQty = arr => arr.reduce((sum, o) => sum + (o.qty || 1), 0);
+  document.getElementById('kitchenOrderCount').textContent = active.length + ' active item' + (active.length !== 1 ? 's' : '');
 
   statsEl.innerHTML = `
     <div class="kitchen-stat-card">
       <div class="kitchen-stat-num" style="color:var(--accent)">${pending.length}</div>
       <div class="kitchen-stat-label">⏳ Pending</div>
-      <div class="kitchen-stat-items">${countItems(pending)} item${countItems(pending)!==1?'s':''}</div>
+      <div class="kitchen-stat-items">${countQty(pending)} pcs</div>
     </div>
     <div class="kitchen-stat-card">
       <div class="kitchen-stat-num" style="color:#5aa8ff">${cooking.length}</div>
       <div class="kitchen-stat-label">🔥 Cooking</div>
-      <div class="kitchen-stat-items">${countItems(cooking)} item${countItems(cooking)!==1?'s':''}</div>
+      <div class="kitchen-stat-items">${countQty(cooking)} pcs</div>
     </div>
     <div class="kitchen-stat-card">
       <div class="kitchen-stat-num" style="color:var(--green)">${ready.length}</div>
       <div class="kitchen-stat-label">✅ Ready</div>
-      <div class="kitchen-stat-items">${countItems(ready)} item${countItems(ready)!==1?'s':''}</div>
+      <div class="kitchen-stat-items">${countQty(ready)} pcs</div>
     </div>
     <div class="kitchen-stat-card">
       <div class="kitchen-stat-num" style="color:var(--text)">${active.length}</div>
-      <div class="kitchen-stat-label">📋 Total to Prepare</div>
-      <div class="kitchen-stat-items">${countItems(active)} item${countItems(active)!==1?'s':''} total</div>
+      <div class="kitchen-stat-label">📋 Total Items</div>
+      <div class="kitchen-stat-items">${countQty(active)} pcs total</div>
     </div>`;
   if (!active.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);font-size:13px;">🎉 All orders served! No active orders.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);font-size:13px;">🎉 All items served! Kitchen is clear.</div>';
     return;
   }
-  grid.innerHTML = active.map((o, idx) => {
+  grid.innerHTML = active.map(o => {
     const statusMap = { pending: '⏳ Pending', cooking: '🔥 Cooking', ready: '✅ Ready' };
     const elapsedSec = Math.floor((Date.now() - o.addedAt) / 1000);
     const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
     const ss = String(elapsedSec % 60).padStart(2, '0');
     const urgencyClass = elapsedSec >= 1200 ? 'urgent' : elapsedSec >= 600 ? 'warn' : '';
+    const isNew = (Date.now() - o.addedAt) < 3000;
     return `
-    <div class="kitchen-card status-${o.kitchenStatus}">
+    <div class="kitchen-card status-${o.kitchenStatus}${isNew ? ' new-order-flag' : ''}">
       <div class="kitchen-card-header">
-        <div>
-          <div class="kitchen-card-id">${esc(o.id)}</div>
-          <div class="kitchen-card-table">📍 ${esc(o.table)}</div>
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          ${o.photo ? `<img class="kitchen-product-img" src="${esc(o.photo)}" alt="${esc(o.name)}" onerror="this.style.display='none'"/>` : `<span style="font-size:28px;">${esc(o.emoji || '🍽️')}</span>`}
+          <div style="min-width:0;">
+            <div class="kitchen-card-product">${esc(o.name)}</div>
+            <div class="kitchen-card-qty-line">×${o.qty || 1}</div>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:12px;font-weight:600;color:${o.kitchenStatus==='pending'?'var(--accent)':o.kitchenStatus==='cooking'?'#5aa8ff':'var(--green)'};">${statusMap[o.kitchenStatus]}</div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:11px;font-weight:600;color:${o.kitchenStatus==='pending'?'var(--accent)':o.kitchenStatus==='cooking'?'#5aa8ff':'var(--green)'};">${statusMap[o.kitchenStatus]}</div>
           <div class="kitchen-card-time ${urgencyClass}" data-addedat="${o.addedAt}">⏱ ${mm}:${ss}</div>
         </div>
       </div>
-      <div class="kitchen-card-items">
-        ${(o.itemDetails || []).map(it => `
-          <div class="kitchen-card-item">
-            ${it.photo ? `<img class="kitchen-item-img" src="${esc(it.photo)}" alt="${esc(it.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/>` : ''}}
-            <span class="kitchen-card-qty" ${it.photo ? 'style="display:none"' : ''}>×${it.qty}</span>
-            <span>${it.photo ? `<span class="kitchen-card-qty">×${it.qty}</span> ` : (esc(it.emoji || '') + ' ')}${esc(it.name)}</span>
-          </div>`).join('')}
+      <div class="kitchen-card-meta">
+        <span class="kitchen-meta-order">${esc(o.orderId)}</span>
+        <span class="kitchen-meta-table">📍 ${esc(o.table)}</span>
       </div>
       <div class="kitchen-card-footer">
-        ${o.kitchenStatus === 'pending' ? `<button class="kitchen-status-btn" onclick="updateKitchenStatus('${o.id}','cooking')">🔥 Start Cooking</button>` : ''}
-        ${o.kitchenStatus === 'cooking' ? `<button class="kitchen-status-btn done-btn" onclick="updateKitchenStatus('${o.id}','ready')">✅ Ready</button>` : ''}
-        ${o.kitchenStatus === 'ready' ? `<button class="kitchen-status-btn done-btn" onclick="updateKitchenStatus('${o.id}','served')">🍽️ Served</button>` : ''}
+        ${o.kitchenStatus === 'pending' ? `<button class="kitchen-status-btn" onclick="updateKitchenStatus('${o.kitchenItemId}','cooking')">🔥 Start Cooking</button>` : ''}
+        ${o.kitchenStatus === 'cooking' ? `<button class="kitchen-status-btn done-btn" onclick="updateKitchenStatus('${o.kitchenItemId}','ready')">✅ Ready</button>` : ''}
+        ${o.kitchenStatus === 'ready' ? `<button class="kitchen-status-btn done-btn" onclick="updateKitchenStatus('${o.kitchenItemId}','served')">🍽️ Served</button>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-function updateKitchenStatus(orderId, status) {
-  const ko = kitchenOrders.find(o => o.id === orderId && o.kitchenStatus !== 'served');
+function updateKitchenStatus(kitchenItemId, status) {
+  const ko = kitchenOrders.find(o => (o.kitchenItemId === kitchenItemId || o.id === kitchenItemId) && o.kitchenStatus !== 'served');
   if (!ko) return;
     ko.kitchenStatus = status;
     if (status === 'cooking') ko.cookingAt = Date.now();
@@ -6768,9 +7173,9 @@ function updateKitchenStatus(orderId, status) {
       const totalSec = Math.floor((ko.servedAt - ko.addedAt) / 1000);
       const m = Math.floor(totalSec / 60);
       const s = totalSec % 60;
-      showToast(`🍽️ ${ko.id} served in ${m}m ${s}s`);
+      showToast(`🍽️ ${esc(ko.name)} ×${ko.qty} served in ${m}m ${s}s`);
     }
-    if (status === 'ready') showToast(`✅ ${ko.id} (${ko.table}) is READY!`);
+    if (status === 'ready') showToast(`✅ ${esc(ko.name)} (${esc(ko.table)}) is READY!`);
     saveLocal('kitchenOrders', kitchenOrders);
     syncKitchenToFirebase();
     renderKitchen();
@@ -6781,7 +7186,7 @@ function syncKitchenToFirebase() {
   if (!firebaseReady) return;
   const obj = {};
   kitchenOrders.forEach((ko, i) => {
-    const key = ko._fbKey || (ko.id ? ko.id.replace('#', 'K') + '_' + i : 'K_' + i);
+    const key = ko._fbKey || (ko.kitchenItemId ? ko.kitchenItemId.replace('#', 'K') : 'K_' + i);
     const clean = { ...ko };
     delete clean._fbKey;
     obj[key] = clean;
@@ -6893,12 +7298,11 @@ function renderMonitoring() {
     const cookToReady = (o.readyAt && o.cookingAt) ? o.readyAt - o.cookingAt : null;
     const readyToServed = (o.servedAt && o.readyAt) ? o.servedAt - o.readyAt : null;
     const totalTime = o.servedAt - o.addedAt;
-    const totalItems = (o.itemDetails || []).reduce((s,i) => s + (i.qty||1), 0);
     return `<tr>
-      <td>${esc(o.id)}</td>
+      <td>${esc(o.orderId || o.id || '')}</td>
       <td>${esc(o.table)}</td>
-      <td style="font-size:11px;max-width:200px;">${(o.itemDetails||[]).map(i => esc(i.name)).join(', ')}</td>
-      <td>${totalItems}</td>
+      <td style="font-size:11px;max-width:200px;">${esc(o.name || '')}</td>
+      <td>${o.qty || 1}</td>
       <td style="font-size:11px;">${fmtTimestamp(o.addedAt)}</td>
       <td style="font-size:11px;">${fmtTimestamp(o.cookingAt)}</td>
       <td style="font-size:11px;">${fmtTimestamp(o.readyAt)}</td>
@@ -6922,7 +7326,7 @@ function renderMonitoring() {
   summaryEl.innerHTML = `
     <div class="monitor-stat">
       <div class="monitor-stat-num" style="color:var(--text)">${served.length}</div>
-      <div class="monitor-stat-label">Orders Served</div>
+      <div class="monitor-stat-label">Items Served</div>
     </div>
     <div class="monitor-stat">
       <div class="monitor-stat-num ${timeClass(avgTotal)}">${fmtDuration(avgTotal)}</div>
@@ -6956,13 +7360,12 @@ function exportMonitoringCSV() {
   const rangeEnd = new Date(ty, tm-1, td, 23, 59, 59, 999).getTime();
   const served = kitchenOrders.filter(o => o.kitchenStatus === 'served' && o.servedAt && o.addedAt >= rangeStart && o.addedAt <= rangeEnd);
   if (!served.length) { showToast('⚠️ No data to export'); return; }
-  const hdr = 'Order ID,Table,Items,Qty,Ordered,Cooking Started,Ready,Served,Wait>Cook,Cook>Ready,Ready>Served,Total Time';
+  const hdr = 'Order ID,Table,Product,Qty,Ordered,Cooking Started,Ready,Served,Wait>Cook,Cook>Ready,Ready>Served,Total Time';
   const rows = served.map(o => {
-    const totalItems = (o.itemDetails || []).reduce((s,i) => s + (i.qty||1), 0);
     return [
-      o.id, o.table,
-      '"' + (o.itemDetails||[]).map(i => i.name).join(', ') + '"',
-      totalItems,
+      o.orderId || o.id || '', o.table,
+      '"' + (o.name || '') + '"',
+      o.qty || 1,
       fmtTimestamp(o.addedAt), fmtTimestamp(o.cookingAt), fmtTimestamp(o.readyAt), fmtTimestamp(o.servedAt),
       fmtDuration(o.cookingAt ? o.cookingAt - o.addedAt : null),
       fmtDuration(o.readyAt && o.cookingAt ? o.readyAt - o.cookingAt : null),
