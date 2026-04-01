@@ -2118,6 +2118,12 @@
     flex: 1; overflow-y: auto; padding: 24px; display: none;
   }
   #view-monitoring.active { display: flex; flex-direction: column; }
+  #view-tables { flex:1; overflow-y:auto; padding:24px; display:none; }
+  #view-tables.active { display:flex; flex-direction:column; }
+  #view-customers { flex:1; overflow-y:auto; padding:24px; display:none; }
+  #view-customers.active { display:flex; flex-direction:column; }
+  #view-analytics { flex:1; overflow-y:auto; padding:24px; display:none; }
+  #view-analytics.active { display:flex; flex-direction:column; }
   .monitor-summary {
     display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
   }
@@ -2191,8 +2197,88 @@
   .kitchen-status-btn.done-btn { background: rgba(var(--green-rgb),.1); color: var(--green); border-color: rgba(var(--green-rgb),.2); }
   .kitchen-status-btn.done-btn:hover { background: var(--green); color: #fff; }
 
+  /* TABLE MANAGEMENT */
+  .table-floor { display:grid; gap:14px; padding:16px 0; }
+  .table-cell {
+    background: var(--surface); border:2px solid var(--border); border-radius:var(--radius);
+    padding:16px; text-align:center; cursor:pointer; transition:all .2s var(--transition);
+    position:relative; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  }
+  .table-cell:hover { border-color:var(--accent); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .table-cell.t-empty { border-color:var(--green); }
+  .table-cell.t-occupied { border-color:var(--accent); background:rgba(var(--accent-rgb),.08); }
+  .table-cell.t-reserved { border-color:#a855f7; background:rgba(168,85,247,.08); }
+  .table-cell.t-paying { border-color:var(--red); background:rgba(var(--red-rgb),.08); }
+  .table-cell .t-num { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:22px; }
+  .table-cell .t-status { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .table-cell .t-status.s-empty { color:var(--green); }
+  .table-cell .t-status.s-occupied { color:var(--accent); }
+  .table-cell .t-status.s-reserved { color:#a855f7; }
+  .table-cell .t-status.s-paying { color:var(--red); }
+  .table-cell .t-info { font-size:10px; color:var(--text3); }
+  .table-cell .t-timer { font-size:10px; color:var(--text2); font-weight:600; }
+
+  /* CUSTOMER DATABASE */
+  .cust-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; display:flex; gap:14px; align-items:center; margin-bottom:10px;
+    transition:all .2s var(--transition);
+  }
+  .cust-card:hover { border-color:var(--accent); box-shadow:var(--shadow-sm); }
+  .cust-avatar { width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--accent);flex-shrink:0; }
+  .cust-info { flex:1;min-width:0; }
+  .cust-name { font-weight:700;font-size:14px; }
+  .cust-meta { font-size:11px;color:var(--text3);margin-top:2px; }
+  .cust-stats { display:flex;gap:12px;font-size:11px;color:var(--text2);margin-top:4px; }
+  .cust-badge { padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600; }
+  .cust-badge.gold { background:rgba(var(--accent-rgb),.15);color:var(--accent); }
+  .cust-badge.silver { background:rgba(var(--green-rgb),.15);color:var(--green); }
+
+  /* SHIFT MANAGEMENT */
+  .shift-banner {
+    background:linear-gradient(135deg,rgba(var(--green-rgb),.1),rgba(var(--accent-rgb),.1));
+    border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:12px; margin-bottom:12px;
+  }
+  .shift-banner .shift-id { font-weight:700; color:var(--accent); }
+
+  /* ANALYTICS */
+  .analytics-card {
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;
+  }
+  .analytics-card-title { font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px; }
+  .analytics-bar { display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px; }
+  .analytics-bar-fill { height:20px;border-radius:4px;background:var(--accent);min-width:4px;transition:width .3s; }
+  .analytics-bar-label { min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .analytics-bar-value { font-weight:600;white-space:nowrap; }
+
+  /* ORDER TYPE SELECTOR */
+  .order-type-bar { display:flex;gap:6px;margin-bottom:8px; }
+  .order-type-btn {
+    padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;
+    color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;
+  }
+  .order-type-btn.active { background:var(--accent);color:#000;border-color:var(--accent); }
+
+  /* MODIFIER TAGS */
+  .mod-tag { display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;background:rgba(var(--accent-rgb),.12);color:var(--accent);margin:1px 2px;font-weight:500; }
+
+  /* SAVE BUTTON */
+  .save-btn {
+    padding:9px 20px; border-radius:var(--radius-sm); border:none;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#0f0e0c; font-family:'Plus Jakarta Sans',sans-serif;
+    font-weight:700; font-size:13px; cursor:pointer;
+    transition:all .25s var(--transition);
+    box-shadow:0 2px 10px rgba(var(--accent-rgb),.2);
+  }
+  .save-btn:hover { box-shadow:0 4px 16px rgba(var(--accent-rgb),.35); transform:translateY(-1px); }
+
   @media (max-width: 768px) {
     .kitchen-grid { grid-template-columns: 1fr; }
+    .table-floor { grid-template-columns: repeat(2,1fr) !important; }
+    #analyticsContent { grid-template-columns:1fr; }
+    .cust-card { flex-wrap:wrap; }
   }
 </style>
 </head>
@@ -2218,6 +2304,7 @@
     </div>
     <div class="login-error" id="login-error">Invalid username or password.</div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div style="text-align:center;margin-top:10px;"><a href="#" onclick="showForgotPassword();return false" style="color:var(--accent);font-size:12px;text-decoration:none;">🔑 Forgot Password?</a></div>
   </div>
 </div>
 
@@ -2235,6 +2322,9 @@
     <button class="tab-btn" id="tab-inventory" onclick="switchView('inventory', this)">Inventory</button>
     <button class="tab-btn" id="tab-kitchen" onclick="switchView('kitchen', this)">Kitchen</button>
     <button class="tab-btn" id="tab-monitoring" onclick="switchView('monitoring', this)">Monitoring</button>
+    <button class="tab-btn" id="tab-tables" onclick="switchView('tables', this)">Tables</button>
+    <button class="tab-btn" id="tab-customers" onclick="switchView('customers', this)">Customers</button>
+    <button class="tab-btn" id="tab-analytics" onclick="switchView('analytics', this)">Analytics</button>
     <button class="tab-btn" id="tab-settings" onclick="switchView('settings', this)">Settings</button>
   </div>
   <div class="topbar-right">
@@ -2327,6 +2417,22 @@
       <div class="cart-header">
         <div class="cart-title">Current Order</div>
         <input class="cart-table-input" type="text" id="tableInput" placeholder="Table / Name" />
+      </div>
+      <!-- Order Type Selector -->
+      <div class="order-type-bar">
+        <button class="order-type-btn active" data-type="dine-in" onclick="setOrderType('dine-in')">🍽️ Dine-in</button>
+        <button class="order-type-btn" data-type="takeout" onclick="setOrderType('takeout')">🥡 Takeout</button>
+        <button class="order-type-btn" data-type="delivery" onclick="setOrderType('delivery')">🛵 Delivery</button>
+      </div>
+      <div id="deliveryFields" style="display:none;padding:0 14px 6px;">
+        <input type="text" id="deliveryAddress" placeholder="📍 Delivery address" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:11px;margin-bottom:4px;" />
+        <input type="text" id="deliveryPhone" placeholder="📱 Contact number" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:11px;" />
+      </div>
+      <!-- Customer Picker (quick select) -->
+      <div style="padding:0 14px 6px;">
+        <select id="customerPicker" onchange="selectCustomer(this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:11px;">
+          <option value="">👤 Walk-in Customer</option>
+        </select>
       </div>
       <div class="cart-items" id="cartItems"></div>
       <div class="cart-footer">
@@ -2611,6 +2717,81 @@
     <div id="monitorEmpty" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Select a date range and click Filter.</div>
   </div>
 
+  <!-- TABLE MANAGEMENT VIEW -->
+  <div id="view-tables">
+    <div class="kitchen-header">
+      <div class="kitchen-title">🍽️ Table Management</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;color:var(--text3);" id="tableStatusSummary"></span>
+        <button class="export-btn" onclick="openTableConfig()">⚙️ Configure</button>
+      </div>
+    </div>
+    <div class="table-floor" id="tableFloor"></div>
+    <!-- Table Config Modal -->
+    <div id="tableConfigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:var(--radius);padding:24px;max-width:380px;width:90%;border:1px solid var(--border);">
+        <div style="font-weight:700;font-size:16px;margin-bottom:16px;">⚙️ Table Configuration</div>
+        <div class="ap-row"><label class="ap-label">Number of Tables</label><input class="ap-input" id="tableCountInput" type="number" min="1" max="50" value="12" /></div>
+        <div class="ap-row"><label class="ap-label">Columns per Row</label><input class="ap-input" id="tableColsInput" type="number" min="2" max="8" value="4" /></div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="modal-cancel" onclick="closeTableConfig()" style="flex:1;margin:0;">Cancel</button>
+          <button class="modal-confirm" onclick="saveTableConfig()" style="flex:1;">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER DATABASE VIEW -->
+  <div id="view-customers">
+    <div class="kitchen-header">
+      <div class="kitchen-title">👥 Customer Database</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="customerSearch" class="search-bar" placeholder="🔍 Search customers..." oninput="renderCustomers()" style="max-width:220px;padding:7px 14px;font-size:12px;" />
+        <button class="add-product-btn" onclick="openAddCustomer()">+ Add Customer</button>
+      </div>
+    </div>
+    <div id="customerStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:0 0 16px;"></div>
+    <div id="customerList"></div>
+    <!-- Add Customer Modal -->
+    <div id="addCustomerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:var(--radius);padding:24px;max-width:420px;width:90%;border:1px solid var(--border);">
+        <div style="font-weight:700;font-size:16px;margin-bottom:16px;" id="custModalTitle">👤 Add New Customer</div>
+        <div class="ap-row"><label class="ap-label">Full Name *</label><input class="ap-input" id="cust-name" type="text" placeholder="e.g. Maria Santos" /></div>
+        <div class="ap-row"><label class="ap-label">Phone</label><input class="ap-input" id="cust-phone" type="tel" placeholder="e.g. 09171234567" /></div>
+        <div class="ap-row"><label class="ap-label">Email</label><input class="ap-input" id="cust-email" type="email" placeholder="e.g. maria@email.com" /></div>
+        <div class="ap-row"><label class="ap-label">Address</label><input class="ap-input" id="cust-address" type="text" placeholder="Optional" /></div>
+        <div class="ap-row"><label class="ap-label">Birthday</label><input class="ap-input" id="cust-birthday" type="date" /></div>
+        <div class="ap-row"><label class="ap-label">Notes</label><input class="ap-input" id="cust-notes" type="text" placeholder="Allergies, preferences, etc." /></div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="modal-cancel" onclick="closeAddCustomer()" style="flex:1;margin:0;">Cancel</button>
+          <button class="modal-confirm" id="custSaveBtn" onclick="saveCustomer()" style="flex:1;">Add Customer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS VIEW -->
+  <div id="view-analytics">
+    <div class="kitchen-header">
+      <div class="kitchen-title">📈 Menu Analytics</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="analyticsRange" onchange="renderAnalytics()" style="padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;">
+          <option value="7">Last 7 Days</option>
+          <option value="30" selected>Last 30 Days</option>
+          <option value="90">Last 90 Days</option>
+          <option value="all">All Time</option>
+        </select>
+        <button class="export-btn" onclick="exportAnalyticsCSV()">📥 Export</button>
+      </div>
+    </div>
+    <div id="analyticsCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="analyticsContent">
+      <div id="analyticsBestSellers"></div>
+      <div id="analyticsCategoryBreakdown"></div>
+    </div>
+    <div id="analyticsMenuMatrix" style="margin-top:16px;"></div>
+  </div>
+
   <!-- SETTINGS VIEW -->
   <div id="view-settings">
     <div class="settings-header">
@@ -2657,6 +2838,54 @@
           <div class="settings-nav-info">
             <div class="settings-nav-title">Audit Log</div>
             <div class="settings-nav-sub">View login, order, void, and discount activity</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-tax" onclick="openSettingsPanel('tax')">
+          <div class="settings-nav-icon">🧾</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Tax Configuration</div>
+            <div class="settings-nav-sub">Tax rates, inclusive/exclusive pricing</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-modifiers" onclick="openSettingsPanel('modifiers')">
+          <div class="settings-nav-icon">🛠️</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Product Modifiers</div>
+            <div class="settings-nav-sub">Size, add-ons, spice level templates</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-combos" onclick="openSettingsPanel('combos')">
+          <div class="settings-nav-icon">🎁</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Combo / Bundle Deals</div>
+            <div class="settings-nav-sub">Create meal combos with special pricing</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-suppliers" onclick="openSettingsPanel('suppliers')">
+          <div class="settings-nav-icon">📦</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Suppliers</div>
+            <div class="settings-nav-sub">Manage suppliers and purchase orders</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-language" onclick="openSettingsPanel('language')">
+          <div class="settings-nav-icon">🌐</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Language</div>
+            <div class="settings-nav-sub">Switch between English and Filipino</div>
+          </div>
+          <span class="settings-nav-arrow">▶</span>
+        </div>
+        <div class="settings-nav-item" id="settings-nav-shifts" onclick="openSettingsPanel('shifts')">
+          <div class="settings-nav-icon">⏰</div>
+          <div class="settings-nav-info">
+            <div class="settings-nav-title">Shift History</div>
+            <div class="settings-nav-sub">View past shift Z-Reports</div>
           </div>
           <span class="settings-nav-arrow">▶</span>
         </div>
@@ -2837,6 +3066,50 @@
             </div>
             <div id="auditLogContent" style="max-height:420px;overflow-y:auto;font-size:12px;"></div>
           </div>
+        </div>
+        <!-- TAX CONFIG PANEL -->
+        <div id="tax-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">🧾</span><div class="settings-detail-title">Tax Configuration</div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <label style="font-size:12px;font-weight:600;color:var(--text2);">Tax Rate (%)</label>
+            <input type="number" id="cfg-tax-rate" min="0" max="100" step="0.5" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;width:120px;" />
+            <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="cfg-tax-inclusive" style="accent-color:var(--accent);width:16px;height:16px;" />
+              <span>Prices already include tax (VAT Inclusive)</span>
+            </label>
+            <div style="font-size:11px;color:var(--text3);">When inclusive, tax is extracted from the item price rather than added on top.</div>
+            <button class="save-btn" onclick="saveTaxConfig()" style="align-self:flex-start;">💾 Save Tax Settings</button>
+          </div>
+        </div>
+
+        <!-- MODIFIERS PANEL -->
+        <div id="modifiers-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">🛠️</span><div class="settings-detail-title">Product Modifiers</div></div>
+          <div style="padding:16px;" id="modifiersPanelContent"></div>
+        </div>
+
+        <!-- COMBOS PANEL -->
+        <div id="combos-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">🎁</span><div class="settings-detail-title">Combo / Bundle Deals</div></div>
+          <div style="padding:16px;" id="combosPanelContent"></div>
+        </div>
+
+        <!-- SUPPLIERS PANEL -->
+        <div id="suppliers-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">📦</span><div class="settings-detail-title">Suppliers</div></div>
+          <div style="padding:16px;" id="suppliersPanelContent"></div>
+        </div>
+
+        <!-- LANGUAGE PANEL -->
+        <div id="language-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">🌐</span><div class="settings-detail-title">Language</div></div>
+          <div style="padding:16px;" id="languagePanelContent"></div>
+        </div>
+
+        <!-- SHIFTS PANEL -->
+        <div id="shifts-section-body" class="settings-detail-body">
+          <div class="settings-detail-header"><span style="font-size:20px;">⏰</span><div class="settings-detail-title">Shift History</div></div>
+          <div style="padding:16px;" id="shiftsPanelContent"></div>
         </div>
       </div>
 
@@ -3115,6 +3388,36 @@ let pendingImageUrl = '';
 let selectedEmoji = '🍽️';
 let editingProductId = null;
 let pendingOrders = []; // offline queue
+
+// Table management
+let tables = [];
+let tableLayout = { rows: 4, cols: 5 };
+
+// Customer database
+let customers = [];
+
+// Shift management
+let currentShift = null; // { id, user, startTime, openingCash }
+let shiftHistory = [];
+
+// Product modifiers
+let modifierTemplates = []; // [{ id, name, options: [{ name, price }] }]
+
+// Combo deals
+let combos = []; // [{ id, name, items: [firestoreId], comboPrice, active }]
+
+// Suppliers
+let suppliers = []; // [{ id, name, contact, email, items }]
+let purchaseOrders = [];
+
+// Delivery
+let deliveryFee = 50;
+
+// Multi-language
+let currentLang = 'en';
+
+// Register ID for multi-register
+let registerId = loadLocal('registerId') || ('REG_' + Math.random().toString(36).substr(2,6).toUpperCase());
 
 // Discount state
 let activeDiscount = null; // null | 'senior' | 'manual'
@@ -3563,6 +3866,33 @@ function startRealtimeListeners() {
       saveLocal('cloudinary', cloudinaryConfig);
     }
   });
+
+  // Tables listener (cross-device sync)
+  db.ref('tables').on('value', snap => {
+    if (snap.exists() && Array.isArray(snap.val())) {
+      tables = snap.val();
+      saveLocal('tables', tables);
+      if (document.getElementById('view-tables')?.classList.contains('active')) renderTableFloor();
+    }
+  });
+
+  // Customers listener
+  db.ref('customers').on('value', snap => {
+    if (snap.exists() && Array.isArray(snap.val())) {
+      customers = snap.val();
+      saveLocal('customers', customers);
+      if (document.getElementById('view-customers')?.classList.contains('active')) renderCustomers();
+      populateCustomerPicker();
+    }
+  });
+
+  // Tax config listener
+  db.ref('settings/taxConfig').on('value', snap => {
+    if (snap.exists()) {
+      Object.assign(taxConfig, snap.val());
+      saveLocal('taxConfig', taxConfig);
+    }
+  });
 }
 
 function stopRealtimeListeners() {
@@ -3574,6 +3904,9 @@ function stopRealtimeListeners() {
   db.ref('settings/categories').off();
   db.ref('settings/business').off();
   db.ref('settings/cloudinary').off();
+  db.ref('tables').off();
+  db.ref('customers').off();
+  db.ref('settings/taxConfig').off();
   rtListenersActive = false;
 }
 
@@ -3643,23 +3976,25 @@ function applyBusinessConfig() {
 
 let activeSettingsPanel = null;
 function openSettingsPanel(section) {
-  const panels = { business: 'business-section-body', users: 'users-section-body', categories: 'cat-section-body', backup: 'backup-section-body', audit: 'audit-section-body' };
-  const navItems = { business: 'settings-nav-business', users: 'settings-nav-users', categories: 'settings-nav-categories', backup: 'settings-nav-backup', audit: 'settings-nav-audit' };
+  const panels = { business: 'business-section-body', users: 'users-section-body', categories: 'cat-section-body', backup: 'backup-section-body', audit: 'audit-section-body', tax: 'tax-section-body', modifiers: 'modifiers-section-body', combos: 'combos-section-body', suppliers: 'suppliers-section-body', language: 'language-section-body', shifts: 'shifts-section-body' };
+  const navItems = { business: 'settings-nav-business', users: 'settings-nav-users', categories: 'settings-nav-categories', backup: 'settings-nav-backup', audit: 'settings-nav-audit', tax: 'settings-nav-tax', modifiers: 'settings-nav-modifiers', combos: 'settings-nav-combos', suppliers: 'settings-nav-suppliers', language: 'settings-nav-language', shifts: 'settings-nav-shifts' };
   // If clicking the already-active panel, close it
   if (activeSettingsPanel === section) {
-    document.getElementById(panels[section]).classList.remove('active');
-    document.getElementById(navItems[section]).classList.remove('active');
+    const p = document.getElementById(panels[section]); if(p) p.classList.remove('active');
+    const n = document.getElementById(navItems[section]); if(n) n.classList.remove('active');
     document.getElementById('settingsPlaceholder').style.display = 'flex';
     activeSettingsPanel = null;
     return;
   }
   // Hide all panels & deactivate nav
-  Object.values(panels).forEach(id => document.getElementById(id).classList.remove('active'));
+  Object.values(panels).forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
   Object.values(navItems).forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
   // Show selected
   document.getElementById('settingsPlaceholder').style.display = 'none';
-  document.getElementById(panels[section]).classList.add('active');
-  document.getElementById(navItems[section]).classList.add('active');
+  const panelEl = document.getElementById(panels[section]);
+  if (panelEl) panelEl.classList.add('active');
+  const navEl = document.getElementById(navItems[section]);
+  if (navEl) navEl.classList.add('active');
   activeSettingsPanel = section;
   // Load data for the panel
   if (section === 'business') {
@@ -3679,6 +4014,18 @@ function openSettingsPanel(section) {
     renderCategoryList();
   } else if (section === 'audit') {
     renderAuditLog();
+  } else if (section === 'tax') {
+    renderTaxPanel();
+  } else if (section === 'modifiers') {
+    renderModifiersPanel();
+  } else if (section === 'combos') {
+    renderCombosPanel();
+  } else if (section === 'suppliers') {
+    renderSuppliersPanel();
+  } else if (section === 'language') {
+    renderLanguagePanel();
+  } else if (section === 'shifts') {
+    renderShiftsPanel();
   }
 }
 // Legacy compat wrappers
@@ -3798,6 +4145,9 @@ function switchView(view, btn) {
   document.getElementById('view-inventory').classList.toggle('active', view === 'inventory');
   document.getElementById('view-kitchen').classList.toggle('active', view === 'kitchen');
   document.getElementById('view-monitoring').classList.toggle('active', view === 'monitoring');
+  document.getElementById('view-tables').classList.toggle('active', view === 'tables');
+  document.getElementById('view-customers').classList.toggle('active', view === 'customers');
+  document.getElementById('view-analytics').classList.toggle('active', view === 'analytics');
   document.getElementById('view-settings').classList.toggle('active', view === 'settings');
   if (view === 'sales') { (firebaseReady ? loadOrdersFromFirestore() : Promise.resolve()).then(() => renderSalesDashboard()); }
   if (view === 'dailysales') { (firebaseReady ? loadOrdersFromFirestore() : Promise.resolve()).then(() => renderDailySales()); }
@@ -3809,6 +4159,9 @@ function switchView(view, btn) {
   if (view === 'inventory') renderInventory();
   if (view === 'kitchen') { renderKitchen(); updateKitchenAlertUI(); }
   if (view === 'monitoring') renderMonitoring();
+  if (view === 'tables') renderTableFloor();
+  if (view === 'customers') renderCustomers();
+  if (view === 'analytics') renderAnalytics();
   if (view === 'settings') {
     // Reset detail panel to placeholder
     document.querySelectorAll('.settings-detail-body').forEach(el => el.classList.remove('active'));
@@ -3875,21 +4228,42 @@ function renderMenu() {
 function addToCart(firestoreId) {
   const item = inventory.find(i => i.firestoreId === firestoreId);
   if (!item || item.stock === 0) return;
-  const existing = cart.find(c => c.firestoreId === firestoreId);
-  const currentQty = existing ? existing.qty : 0;
-  if (currentQty >= item.stock) { showToast('🔴 Not enough stock!'); return; }
-  if (existing) { existing.qty++; }
-  else { cart.push({ firestoreId: item.firestoreId, name: item.name, emoji: item.emoji, photo: item.photo || '', price: item.price, qty: 1 }); }
+
+  // If modifier templates exist, show picker for first add
+  if (modifierTemplates.length) {
+    showModifierPicker(firestoreId, mods => {
+      if (mods === null) return; // cancelled
+      _addToCartFinal(firestoreId, item, mods);
+    });
+  } else {
+    _addToCartFinal(firestoreId, item, []);
+  }
+}
+
+function _addToCartFinal(firestoreId, item, mods) {
+  const modExtra = (mods || []).reduce((s, m) => s + (m.price || 0), 0);
+  // If no mods, merge with existing; otherwise add as new line
+  if (!mods || !mods.length) {
+    const existing = cart.find(c => c.firestoreId === firestoreId && (!c.modifiers || !c.modifiers.length));
+    const currentQty = existing ? existing.qty : 0;
+    if (currentQty >= item.stock) { showToast('🔴 Not enough stock!'); return; }
+    if (existing) { existing.qty++; }
+    else { cart.push({ firestoreId: item.firestoreId, name: item.name, emoji: item.emoji, photo: item.photo || '', price: item.price, qty: 1, modifiers: [] }); }
+  } else {
+    const totalQtyInCart = cart.filter(c => c.firestoreId === firestoreId).reduce((s,c) => s+c.qty, 0);
+    if (totalQtyInCart >= item.stock) { showToast('🔴 Not enough stock!'); return; }
+    cart.push({ firestoreId: item.firestoreId, name: item.name, emoji: item.emoji, photo: item.photo || '', price: item.price + modExtra, basePrice: item.price, qty: 1, modifiers: mods });
+  }
   renderCart();
   syncCartToFirebase();
   showToast(`${item.emoji} Added!`);
 }
 
-function changeQty(firestoreId, delta) {
-  const row = cart.find(c => c.firestoreId === firestoreId);
+function changeQty(firestoreId, delta, idx) {
+  const row = idx !== undefined ? cart[idx] : cart.find(c => c.firestoreId === firestoreId);
   if (!row) return;
   row.qty += delta;
-  if (row.qty <= 0) cart = cart.filter(c => c.firestoreId !== firestoreId);
+  if (row.qty <= 0) cart.splice(idx !== undefined ? idx : cart.indexOf(row), 1);
   renderCart();
   syncCartToFirebase();
 }
@@ -3914,29 +4288,33 @@ function renderCart() {
     btn.disabled = true;
     return;
   }
-  el.innerHTML = cart.map(row => `
+  el.innerHTML = cart.map((row, idx) => `
     <div class="cart-row">
       ${row.photo
         ? `<img src="${row.photo}" class="cart-row-img" alt="${esc(row.name)}">`
         : `<div class="cart-row-emoji">${esc(row.emoji)}</div>`}
       <div class="cart-row-info">
         <div class="cart-row-name">${esc(row.name)}</div>
+        ${(row.modifiers && row.modifiers.length) ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;">${row.modifiers.map(m => `<span class="mod-tag">${esc(m.name)}${m.price>0?' +₱'+m.price:''}</span>`).join('')}</div>` : ''}
         <div class="cart-row-subtotal">₱${(row.price * row.qty).toLocaleString()}</div>
       </div>
       <div class="qty-ctrl">
-        <button class="qty-btn" onclick="changeQty('${row.firestoreId}', -1)">−</button>
+        <button class="qty-btn" onclick="changeQty('${row.firestoreId}', -1, ${idx})">−</button>
         <span class="qty-val">${row.qty}</span>
-        <button class="qty-btn" onclick="changeQty('${row.firestoreId}', 1)">+</button>
+        <button class="qty-btn" onclick="changeQty('${row.firestoreId}', 1, ${idx})">+</button>
       </div>
     </div>`).join('');
   const subtotal = cart.reduce((s,r) => s + r.price * r.qty, 0);
-  const tax = subtotal * TAX_RATE;
-  const total = subtotal + tax;
+  const effectiveRate = taxConfig.rate || TAX_RATE;
+  const tax = taxConfig.inclusive ? subtotal - (subtotal / (1 + effectiveRate)) : subtotal * effectiveRate;
+  const total = taxConfig.inclusive ? subtotal : subtotal + tax;
+  const taxLabel = taxConfig.inclusive ? 'VAT (Incl.)' : `VAT (${(effectiveRate*100).toFixed(0)}%)`;
   totalsEl.innerHTML = `
     <div class="totals-row"><span>Subtotal</span><span>₱${subtotal.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
-    <div class="totals-row"><span>VAT (12%)</span><span>₱${tax.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
+    <div class="totals-row"><span>${taxLabel}</span><span>₱${tax.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
     <div class="totals-row grand"><span>TOTAL</span><span>₱${total.toLocaleString('en',{minimumFractionDigits:2})}</span></div>`;
   btn.disabled = false;
+  populateCustomerPicker();
 }
 
 // =====================================================================
@@ -4079,8 +4457,12 @@ function getCheckoutTotal() {
   const subtotal = cart.reduce((s,r) => s + r.price * r.qty, 0);
   const { discount, vatExempt } = getDiscountAmount();
   const discountedSubtotal = subtotal - discount;
-  const tax = vatExempt ? 0 : discountedSubtotal * TAX_RATE;
-  const total = discountedSubtotal + tax;
+  const effectiveRate = taxConfig.rate || TAX_RATE;
+  let tax;
+  if (vatExempt) tax = 0;
+  else if (taxConfig.inclusive) tax = discountedSubtotal - (discountedSubtotal / (1 + effectiveRate));
+  else tax = discountedSubtotal * effectiveRate;
+  const total = taxConfig.inclusive ? discountedSubtotal : discountedSubtotal + tax;
   return { subtotal, discount, vatExempt, tax, total };
 }
 
@@ -4165,8 +4547,7 @@ function openCheckout() {
   document.getElementById('modalItems').innerHTML = cart.map(r =>
     `<div class="modal-item-row"><span>${r.name} ×${r.qty}</span><span>₱${(r.price*r.qty).toLocaleString()}</span></div>`
   ).join('');
-  const subtotal = cart.reduce((s,r) => s + r.price * r.qty, 0);
-  const total = subtotal * (1 + TAX_RATE);
+  const { total } = getCheckoutTotal();
   document.getElementById('modalTotal').textContent = `₱${total.toLocaleString('en',{minimumFractionDigits:2})}`;
   document.getElementById('modalIcon').textContent = '🛒';
   document.getElementById('modalTitle').textContent = 'Confirm Order';
@@ -4417,13 +4798,19 @@ function confirmOrder() {
     id: `#${String(orderCount).padStart(4,'0')}`,
     table,
     items: cart.map(r => `${r.emoji} ${r.name} ×${r.qty}`),
-    itemDetails: cart.map(r => ({ name: r.name, emoji: r.emoji, qty: r.qty, price: r.price, photo: r.photo || null })),
+    itemDetails: cart.map(r => ({ name: r.name, emoji: r.emoji, qty: r.qty, price: r.price, photo: r.photo || null, modifiers: r.modifiers || [] })),
     subtotal,
     discount: discount > 0 ? discount : null,
     discountType: activeDiscount || null,
     vatExempt: vatExempt || null,
     tax,
     total,
+    orderType: orderType || 'dine-in',
+    deliveryAddress: orderType === 'delivery' ? (document.getElementById('deliveryAddress')?.value || '') : null,
+    deliveryPhone: orderType === 'delivery' ? (document.getElementById('deliveryPhone')?.value || '') : null,
+    customerId: document.getElementById('customerPicker')?.value || null,
+    registerId: registerId,
+    shiftId: currentShift ? currentShift.id : null,
     payment: isSplitPayment ? 'Split' : selectedPayment,
     paymentRef: paymentRef || null,
     cashTendered: selectedPayment === 'Cash' && !isSplitPayment ? cashTendered : null,
@@ -4453,7 +4840,13 @@ function confirmOrder() {
   addToKitchen(order);
   // Check low stock after deduction
   checkLowStock();
-  logAudit('order_placed', { orderId: order.id, table, total: order.total, payment: selectedPayment });
+  // Update customer loyalty
+  const custId = document.getElementById('customerPicker')?.value;
+  if (custId) addLoyaltyPoints(custId, order.total);
+  // Update table status if linked
+  const linkedTable = tables.find(t => t.name === table && t.status === 'occupied');
+  if (linkedTable) { linkedTable.orderId = order.id; saveLocal('tables', tables); }
+  logAudit('order_placed', { orderId: order.id, table, total: order.total, payment: selectedPayment, orderType });
 
   // Success state
   document.getElementById('modalIcon').innerHTML = '<span class="success-anim">✅</span>';
@@ -4496,8 +4889,14 @@ function confirmOrder() {
   };
   document.querySelector('.modal-cancel').style.display = 'none';
 
-  // Print receipt automatically
-  printReceipt(order, { cashTendered, change, paymentRef });
+  // Print receipt automatically (use thermal format)
+  printThermalReceipt(order, { cashTendered, change, paymentRef });
+
+  // Reset order type and delivery fields
+  setOrderType('dine-in');
+  if (document.getElementById('deliveryAddress')) document.getElementById('deliveryAddress').value = '';
+  if (document.getElementById('deliveryPhone')) document.getElementById('deliveryPhone').value = '';
+  if (document.getElementById('customerPicker')) document.getElementById('customerPicker').value = '';
 }
 
 function printReceipt(order, payInfo) {
@@ -6057,12 +6456,12 @@ async function toggleVisibility(firestoreId) {
 // =====================================================================
 // TOAST
 // =====================================================================
-function showToast(msg) {
+function showToast(msg, duration = 1800) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
 }
 
 // =====================================================================
@@ -6321,10 +6720,10 @@ const ALL_PERMISSIONS = [
 ];
 
 const ROLE_DEFAULTS = {
-  admin:      ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','settings','manageUsers'],
-  manager:    ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','settings','manageUsers'],
-  supervisor: ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','settings','manageUsers'],
-  cashier:    ['pos','orders','kitchen','inventory','settings'],
+  admin:      ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','tables','customers','analytics','settings','manageUsers'],
+  manager:    ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','tables','customers','analytics','settings','manageUsers'],
+  supervisor: ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','editInventory','kitchen','monitoring','tables','customers','analytics','settings','manageUsers'],
+  cashier:    ['pos','orders','kitchen','inventory','tables','settings'],
 };
 
 function getUserPerms(user) {
@@ -6476,12 +6875,18 @@ function onLoginSuccess() {
   loadCartFromFirebase();
   // Render
   renderCategories(); renderMenu(); renderCart();
+  // Show shift banner
+  renderShiftBanner();
+  // Apply language
+  applyLanguage();
+  // Populate customer picker
+  populateCustomerPicker();
 }
 
 function applyRoleUI() {
   const perms = getUserPerms(currentUser);
   // Show/hide tabs
-  ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','kitchen','monitoring','settings'].forEach(tab => {
+  ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','kitchen','monitoring','tables','customers','analytics','settings'].forEach(tab => {
     const el = document.getElementById(`tab-${tab}`);
     if (el) el.style.display = perms.includes(tab) ? '' : 'none';
   });
@@ -6499,6 +6904,10 @@ function applyRoleUI() {
 
 function doLogout() {
   if (currentUser) logAudit('logout', { username: currentUser.username });
+  // End active shift if any
+  if (currentShift && currentShift.user === (currentUser?.username || '')) {
+    if (confirm('You have an active shift. End shift now?')) endShift();
+  }
   currentUser = null;
   cart = [];
   document.getElementById('login-screen').classList.remove('hidden');
@@ -6513,7 +6922,7 @@ function doLogout() {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-pos').classList.add('active');
   document.getElementById('view-pos').style.display = 'flex';
-  ['sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','kitchen','monitoring','settings'].forEach(v => document.getElementById(`view-${v}`).classList.remove('active'));
+  ['sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','kitchen','monitoring','tables','customers','analytics','settings'].forEach(v => document.getElementById(`view-${v}`).classList.remove('active'));
 }
 
 // =====================================================================
@@ -6548,6 +6957,7 @@ async function renderUsersList() {
       </div>
       <div class="user-row-actions">
         <button class="cat-action-btn" onclick="editUser('${u.firestoreId}')">✏️ Edit</button>
+        <button class="cat-action-btn" onclick="adminResetPassword('${u.firestoreId}')" title="Reset password">🔑</button>
         ${u.firestoreId !== currentUser.firestoreId ? `<button class="cat-action-btn del" onclick="deleteUser('${u.firestoreId}','${u.name}')">🗑️ Remove</button>` : `<span style="font-size:11px;color:var(--text3);padding:0 8px;">You</span>`}
       </div>
     </div>`;
@@ -6685,11 +7095,1017 @@ async function deleteUser(firestoreId, name) {
 }
 
 // =====================================================================
+// PASSWORD RESET
+// =====================================================================
+function showForgotPassword() {
+  showToast('🔑 Contact your Admin or Manager to reset your password.');
+}
+
+async function adminResetPassword(firestoreId) {
+  if (!currentUser || !['admin','manager'].includes(currentUser.role)) { showToast('⛔ Only admin/manager can reset passwords'); return; }
+  const u = users.find(u => u.firestoreId === firestoreId);
+  if (!u) { showToast('User not found'); return; }
+  const ok = await showConfirm({ icon: '🔑', title: 'Reset Password?', message: `Reset password for "${u.name}" (@${u.username})? A temporary password will be generated.`, actionText: 'Reset' });
+  if (!ok) return;
+  const tempPw = 'temp' + Math.random().toString(36).substr(2,6);
+  const hashed = await hashPassword(tempPw);
+  u.password = hashed;
+  saveLocal('users', users);
+  if (firebaseReady && db) { try { await db.ref('users/' + firestoreId + '/password').set(hashed); } catch(e) {} }
+  logAudit('password_reset', { targetUser: u.username, by: currentUser.username });
+  showToast(`✅ Password reset! Temporary: ${tempPw}`, 8000);
+}
+
+// =====================================================================
+// MULTI-REGISTER SUPPORT
+// =====================================================================
+function getRegisterId() {
+  if (!loadLocal('registerId')) saveLocal('registerId', registerId);
+  return registerId;
+}
+
+// =====================================================================
+// TABLE MANAGEMENT
+// =====================================================================
+function initTables() {
+  const saved = loadLocal('tables');
+  if (saved && saved.length) { tables = saved; return; }
+  const savedConfig = loadLocal('tableConfig') || { count: 12, cols: 4 };
+  tableLayout.cols = savedConfig.cols;
+  tables = [];
+  for (let i = 1; i <= savedConfig.count; i++) {
+    tables.push({ id: 'T' + i, name: 'T' + i, status: 'empty', orderId: null, occupiedAt: null, guests: 0, reservedBy: '', reservedAt: null });
+  }
+  saveLocal('tables', tables);
+}
+
+function renderTableFloor() {
+  const el = document.getElementById('tableFloor');
+  if (!tables.length) initTables();
+  const cols = loadLocal('tableConfig')?.cols || 4;
+  el.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  const counts = { empty:0, occupied:0, reserved:0, paying:0 };
+  tables.forEach(t => counts[t.status] = (counts[t.status]||0) + 1);
+  document.getElementById('tableStatusSummary').innerHTML =
+    `<span style="color:var(--green)">●</span> ${counts.empty} Empty &nbsp; <span style="color:var(--accent)">●</span> ${counts.occupied} Occupied &nbsp; <span style="color:#a855f7">●</span> ${counts.reserved} Reserved &nbsp; <span style="color:var(--red)">●</span> ${counts.paying} Paying`;
+
+  el.innerHTML = tables.map(t => {
+    const elapsed = t.occupiedAt ? Math.floor((Date.now() - new Date(t.occupiedAt).getTime()) / 60000) : 0;
+    const order = t.orderId ? orderHistory.find(o => o.id === t.orderId) : null;
+    return `<div class="table-cell t-${t.status}" onclick="tableAction('${t.id}')">
+      <div class="t-num">${esc(t.name)}</div>
+      <div class="t-status s-${t.status}">${t.status === 'empty' ? '✅ Available' : t.status === 'occupied' ? '🍽️ Occupied' : t.status === 'reserved' ? '📋 Reserved' : '💰 Paying'}</div>
+      ${t.status === 'occupied' ? `<div class="t-timer">⏱ ${elapsed}min</div>` : ''}
+      ${t.status === 'reserved' ? `<div class="t-info">${esc(t.reservedBy || '')}</div>` : ''}
+      ${t.guests ? `<div class="t-info">👥 ${t.guests} guest${t.guests>1?'s':''}</div>` : ''}
+      ${order ? `<div class="t-info">${order.id} · ₱${order.total?.toLocaleString()}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function tableAction(tableId) {
+  const t = tables.find(x => x.id === tableId);
+  if (!t) return;
+  if (t.status === 'empty') {
+    const action = await showTableMenu(t, ['🍽️ Seat Guests', '📋 Reserve', '🛒 New Order']);
+    if (action === 0) { t.status = 'occupied'; t.occupiedAt = new Date().toISOString(); t.guests = parseInt(prompt('Number of guests:') || '1') || 1; }
+    else if (action === 1) { t.status = 'reserved'; t.reservedBy = prompt('Reserved for:') || ''; t.reservedAt = new Date().toISOString(); }
+    else if (action === 2) { document.getElementById('tableInput').value = t.name; t.status = 'occupied'; t.occupiedAt = new Date().toISOString(); switchView('pos', document.getElementById('tab-pos')); }
+    else return;
+  } else if (t.status === 'occupied') {
+    const action = await showTableMenu(t, ['💰 Mark Paying', '🛒 Go to POS', '✅ Clear Table']);
+    if (action === 0) { t.status = 'paying'; }
+    else if (action === 1) { document.getElementById('tableInput').value = t.name; switchView('pos', document.getElementById('tab-pos')); return; }
+    else if (action === 2) { Object.assign(t, { status:'empty', orderId:null, occupiedAt:null, guests:0, reservedBy:'', reservedAt:null }); }
+    else return;
+  } else if (t.status === 'reserved') {
+    const action = await showTableMenu(t, ['🍽️ Seat Now', '✅ Clear']);
+    if (action === 0) { t.status = 'occupied'; t.occupiedAt = new Date().toISOString(); t.guests = parseInt(prompt('Number of guests:') || '1') || 1; }
+    else if (action === 1) { Object.assign(t, { status:'empty', orderId:null, occupiedAt:null, guests:0, reservedBy:'', reservedAt:null }); }
+    else return;
+  } else if (t.status === 'paying') {
+    const action = await showTableMenu(t, ['✅ Payment Done', '↩️ Back to Occupied']);
+    if (action === 0) { Object.assign(t, { status:'empty', orderId:null, occupiedAt:null, guests:0, reservedBy:'', reservedAt:null }); }
+    else if (action === 1) { t.status = 'occupied'; }
+    else return;
+  }
+  saveLocal('tables', tables);
+  if (firebaseReady && db) db.ref('tables').set(tables).catch(() => {});
+  renderTableFloor();
+}
+
+function showTableMenu(table, options) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;min-width:240px;';
+    box.innerHTML = `<div style="font-weight:700;margin-bottom:12px;">${esc(table.name)}</div>` +
+      options.map((o, i) => `<button onclick="this.closest('div').dataset.choice='${i}'" style="display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">${o}</button>`).join('') +
+      `<button onclick="this.closest('div').dataset.choice='-1'" style="display:block;width:100%;text-align:center;padding:8px;border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;margin-top:4px;">Cancel</button>`;
+    box.addEventListener('click', e => {
+      if (box.dataset.choice !== undefined) { overlay.remove(); resolve(parseInt(box.dataset.choice)); }
+    });
+    overlay.appendChild(box);
+    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(-1); } });
+    document.body.appendChild(overlay);
+  });
+}
+
+function openTableConfig() {
+  const cfg = loadLocal('tableConfig') || { count: tables.length || 12, cols: 4 };
+  document.getElementById('tableCountInput').value = cfg.count;
+  document.getElementById('tableColsInput').value = cfg.cols;
+  document.getElementById('tableConfigModal').style.display = 'flex';
+}
+function closeTableConfig() { document.getElementById('tableConfigModal').style.display = 'none'; }
+function saveTableConfig() {
+  const count = parseInt(document.getElementById('tableCountInput').value) || 12;
+  const cols = parseInt(document.getElementById('tableColsInput').value) || 4;
+  saveLocal('tableConfig', { count, cols });
+  tableLayout.cols = cols;
+  // Rebuild tables, preserving status of existing ones
+  const oldMap = {};
+  tables.forEach(t => oldMap[t.id] = t);
+  tables = [];
+  for (let i = 1; i <= count; i++) {
+    const id = 'T' + i;
+    tables.push(oldMap[id] || { id, name: id, status: 'empty', orderId: null, occupiedAt: null, guests: 0, reservedBy: '', reservedAt: null });
+  }
+  saveLocal('tables', tables);
+  closeTableConfig();
+  renderTableFloor();
+  showToast(`✅ ${count} tables configured`);
+}
+
+// =====================================================================
+// CUSTOMER DATABASE
+// =====================================================================
+function initCustomers() {
+  customers = loadLocal('customers') || [];
+}
+
+function renderCustomers() {
+  const el = document.getElementById('customerList');
+  const statsEl = document.getElementById('customerStats');
+  if (!customers.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">No customers yet. Add one above.</div>'; statsEl.innerHTML = ''; return; }
+  const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+  const filtered = search ? customers.filter(c => c.name.toLowerCase().includes(search) || (c.phone||'').includes(search) || (c.email||'').toLowerCase().includes(search)) : customers;
+
+  const totalSpend = customers.reduce((s,c) => s+(c.totalSpent||0),0);
+  const totalVisits = customers.reduce((s,c) => s+(c.visits||0),0);
+  statsEl.innerHTML = `
+    <div class="analytics-card"><div class="analytics-card-title">Total Customers</div><div style="font-size:22px;font-weight:800;">${customers.length}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Total Revenue</div><div style="font-size:22px;font-weight:800;color:var(--green);">₱${totalSpend.toLocaleString()}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Total Visits</div><div style="font-size:22px;font-weight:800;">${totalVisits}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Loyalty Points</div><div style="font-size:22px;font-weight:800;color:var(--accent);">⭐ ${customers.reduce((s,c)=>s+(c.points||0),0).toLocaleString()}</div></div>`;
+
+  el.innerHTML = filtered.map(c => {
+    const initials = c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const tier = (c.totalSpent||0) >= 10000 ? 'gold' : 'silver';
+    const bday = c.birthday ? new Date(c.birthday) : null;
+    const isBirthday = bday && bday.getMonth() === new Date().getMonth() && bday.getDate() === new Date().getDate();
+    return `<div class="cust-card">
+      <div class="cust-avatar">${initials}</div>
+      <div class="cust-info">
+        <div class="cust-name">${esc(c.name)} ${isBirthday ? '🎂' : ''} <span class="cust-badge ${tier}">${tier === 'gold' ? '⭐ Gold' : '🥈 Silver'}</span></div>
+        <div class="cust-meta">${c.phone ? '📱 '+esc(c.phone) : ''} ${c.email ? '· ✉️ '+esc(c.email) : ''}</div>
+        <div class="cust-stats">
+          <span>🛒 ${c.visits||0} visits</span>
+          <span>💰 ₱${(c.totalSpent||0).toLocaleString()}</span>
+          <span>⭐ ${c.points||0} pts</span>
+          ${c.lastVisit ? `<span>📅 ${new Date(c.lastVisit).toLocaleDateString('en-PH',{month:'short',day:'numeric'})}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="cat-action-btn" onclick="editCustomer('${c.id}')">✏️</button>
+        <button class="cat-action-btn del" onclick="deleteCustomer('${c.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let editingCustomerId = null;
+function openAddCustomer() {
+  editingCustomerId = null;
+  document.getElementById('custModalTitle').textContent = '👤 Add New Customer';
+  document.getElementById('custSaveBtn').textContent = 'Add Customer';
+  ['cust-name','cust-phone','cust-email','cust-address','cust-birthday','cust-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addCustomerModal').style.display = 'flex';
+}
+function closeAddCustomer() { document.getElementById('addCustomerModal').style.display = 'none'; editingCustomerId = null; }
+
+function editCustomer(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  editingCustomerId = id;
+  document.getElementById('custModalTitle').textContent = '✏️ Edit Customer';
+  document.getElementById('custSaveBtn').textContent = 'Update';
+  document.getElementById('cust-name').value = c.name || '';
+  document.getElementById('cust-phone').value = c.phone || '';
+  document.getElementById('cust-email').value = c.email || '';
+  document.getElementById('cust-address').value = c.address || '';
+  document.getElementById('cust-birthday').value = c.birthday || '';
+  document.getElementById('cust-notes').value = c.notes || '';
+  document.getElementById('addCustomerModal').style.display = 'flex';
+}
+
+function saveCustomer() {
+  const name = document.getElementById('cust-name').value.trim();
+  if (!name) { showToast('🔴 Name is required'); return; }
+  const data = {
+    name,
+    phone: document.getElementById('cust-phone').value.trim(),
+    email: document.getElementById('cust-email').value.trim(),
+    address: document.getElementById('cust-address').value.trim(),
+    birthday: document.getElementById('cust-birthday').value,
+    notes: document.getElementById('cust-notes').value.trim(),
+  };
+  if (editingCustomerId) {
+    const c = customers.find(x => x.id === editingCustomerId);
+    if (c) Object.assign(c, data);
+    showToast('✅ Customer updated');
+  } else {
+    customers.push({ id: generateId(), ...data, visits: 0, totalSpent: 0, points: 0, lastVisit: null, createdAt: new Date().toISOString() });
+    showToast('✅ Customer added');
+  }
+  saveLocal('customers', customers);
+  if (firebaseReady && db) db.ref('customers').set(customers).catch(() => {});
+  closeAddCustomer();
+  renderCustomers();
+}
+
+async function deleteCustomer(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  const ok = await showConfirm({ icon: '🗑️', title: 'Delete Customer?', message: `Remove "${c.name}" permanently?`, actionText: 'Delete' });
+  if (!ok) return;
+  customers = customers.filter(x => x.id !== id);
+  saveLocal('customers', customers);
+  if (firebaseReady && db) db.ref('customers').set(customers).catch(() => {});
+  renderCustomers();
+  showToast('🗑️ Customer deleted');
+}
+
+function addLoyaltyPoints(customerId, amount) {
+  const c = customers.find(x => x.id === customerId);
+  if (!c) return;
+  const points = Math.floor(amount / 100); // 1 point per ₱100
+  c.points = (c.points || 0) + points;
+  c.visits = (c.visits || 0) + 1;
+  c.totalSpent = (c.totalSpent || 0) + amount;
+  c.lastVisit = new Date().toISOString();
+  saveLocal('customers', customers);
+}
+
+// =====================================================================
+// MENU ANALYTICS
+// =====================================================================
+function renderAnalytics() {
+  const range = document.getElementById('analyticsRange').value;
+  const now = new Date();
+  let filtered = orderHistory.filter(o => o.status !== 'voided');
+  if (range !== 'all') {
+    const days = parseInt(range);
+    const cutoff = new Date(now.getTime() - days * 86400000);
+    filtered = filtered.filter(o => {
+      const d = o._localTime ? new Date(o._localTime) : new Date(o.time || 0);
+      return d >= cutoff;
+    });
+  }
+
+  // Item analysis
+  const itemData = {};
+  filtered.forEach(o => {
+    (o.itemDetails || []).forEach(d => {
+      if (!itemData[d.name]) itemData[d.name] = { name: d.name, emoji: d.emoji || '', qty: 0, revenue: 0, orders: 0 };
+      itemData[d.name].qty += d.qty;
+      itemData[d.name].revenue += d.price * d.qty;
+      itemData[d.name].orders++;
+    });
+  });
+  const items = Object.values(itemData).sort((a,b) => b.revenue - a.revenue);
+  const totalRevenue = items.reduce((s,i) => s+i.revenue, 0);
+  const totalQty = items.reduce((s,i) => s+i.qty, 0);
+
+  // Category analysis
+  const catData = {};
+  filtered.forEach(o => {
+    (o.itemDetails || []).forEach(d => {
+      const inv = inventory.find(i => i.name === d.name);
+      const cat = inv ? inv.cat : 'Other';
+      if (!catData[cat]) catData[cat] = { cat, revenue: 0, qty: 0 };
+      catData[cat].revenue += d.price * d.qty;
+      catData[cat].qty += d.qty;
+    });
+  });
+  const cats = Object.values(catData).sort((a,b) => b.revenue - a.revenue);
+
+  // Cards
+  document.getElementById('analyticsCards').innerHTML = `
+    <div class="analytics-card"><div class="analytics-card-title">Products Sold</div><div style="font-size:22px;font-weight:800;">${totalQty.toLocaleString()}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Product Revenue</div><div style="font-size:22px;font-weight:800;color:var(--green);">₱${totalRevenue.toLocaleString()}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Unique Products</div><div style="font-size:22px;font-weight:800;">${items.length}</div></div>
+    <div class="analytics-card"><div class="analytics-card-title">Avg per Item</div><div style="font-size:22px;font-weight:800;">₱${totalQty ? (totalRevenue/totalQty).toFixed(0) : 0}</div></div>`;
+
+  // Best Sellers
+  const maxRev = items[0]?.revenue || 1;
+  document.getElementById('analyticsBestSellers').innerHTML = `
+    <div class="analytics-card"><div class="analytics-card-title">🏆 Top Products by Revenue</div>
+    ${items.slice(0,10).map(i => `<div class="analytics-bar">
+      <div class="analytics-bar-label">${i.emoji} ${esc(i.name)}</div>
+      <div class="analytics-bar-fill" style="width:${(i.revenue/maxRev*100).toFixed(1)}%;flex:1;"></div>
+      <div class="analytics-bar-value">₱${i.revenue.toLocaleString()} (${i.qty})</div>
+    </div>`).join('')}
+    </div>`;
+
+  // Category breakdown
+  const maxCatRev = cats[0]?.revenue || 1;
+  document.getElementById('analyticsCategoryBreakdown').innerHTML = `
+    <div class="analytics-card"><div class="analytics-card-title">📊 Category Breakdown</div>
+    ${cats.map(c => `<div class="analytics-bar">
+      <div class="analytics-bar-label">${esc(c.cat)}</div>
+      <div class="analytics-bar-fill" style="width:${(c.revenue/maxCatRev*100).toFixed(1)}%;flex:1;background:var(--green);"></div>
+      <div class="analytics-bar-value">₱${c.revenue.toLocaleString()} (${c.qty})</div>
+    </div>`).join('')}
+    </div>`;
+
+  // Menu Engineering Matrix (Stars, Plowhorses, Puzzles, Dogs)
+  const avgQty = totalQty / (items.length || 1);
+  const avgMargin = totalRevenue / (totalQty || 1);
+  document.getElementById('analyticsMenuMatrix').innerHTML = `
+    <div class="analytics-card"><div class="analytics-card-title">🧭 Menu Engineering Matrix</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+      <div style="background:rgba(var(--green-rgb),.08);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-weight:700;color:var(--green);font-size:13px;">⭐ Stars <span style="font-size:10px;font-weight:400;">(High Pop, High Rev)</span></div>
+        ${items.filter(i => i.qty >= avgQty && (i.revenue/i.qty) >= avgMargin).slice(0,5).map(i => `<div style="font-size:12px;margin-top:4px;">${i.emoji} ${esc(i.name)}</div>`).join('') || '<div style="font-size:11px;color:var(--text3);">—</div>'}
+      </div>
+      <div style="background:rgba(var(--accent-rgb),.08);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-weight:700;color:var(--accent);font-size:13px;">🐴 Plowhorses <span style="font-size:10px;font-weight:400;">(High Pop, Low Rev)</span></div>
+        ${items.filter(i => i.qty >= avgQty && (i.revenue/i.qty) < avgMargin).slice(0,5).map(i => `<div style="font-size:12px;margin-top:4px;">${i.emoji} ${esc(i.name)}</div>`).join('') || '<div style="font-size:11px;color:var(--text3);">—</div>'}
+      </div>
+      <div style="background:rgba(168,85,247,.08);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-weight:700;color:#a855f7;font-size:13px;">🧩 Puzzles <span style="font-size:10px;font-weight:400;">(Low Pop, High Rev)</span></div>
+        ${items.filter(i => i.qty < avgQty && (i.revenue/i.qty) >= avgMargin).slice(0,5).map(i => `<div style="font-size:12px;margin-top:4px;">${i.emoji} ${esc(i.name)}</div>`).join('') || '<div style="font-size:11px;color:var(--text3);">—</div>'}
+      </div>
+      <div style="background:rgba(var(--red-rgb),.08);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-weight:700;color:var(--red);font-size:13px;">🐕 Dogs <span style="font-size:10px;font-weight:400;">(Low Pop, Low Rev)</span></div>
+        ${items.filter(i => i.qty < avgQty && (i.revenue/i.qty) < avgMargin).slice(0,5).map(i => `<div style="font-size:12px;margin-top:4px;">${i.emoji} ${esc(i.name)}</div>`).join('') || '<div style="font-size:11px;color:var(--text3);">—</div>'}
+      </div>
+    </div>
+    </div>`;
+}
+
+function exportAnalyticsCSV() {
+  const range = document.getElementById('analyticsRange').value;
+  const now = new Date();
+  let filtered = orderHistory.filter(o => o.status !== 'voided');
+  if (range !== 'all') { const days = parseInt(range); const cutoff = new Date(now.getTime() - days * 86400000); filtered = filtered.filter(o => { const d = o._localTime ? new Date(o._localTime) : new Date(o.time||0); return d>=cutoff; }); }
+  const itemData = {};
+  filtered.forEach(o => { (o.itemDetails||[]).forEach(d => { if(!itemData[d.name]) itemData[d.name]={name:d.name,qty:0,revenue:0,orders:0}; itemData[d.name].qty+=d.qty; itemData[d.name].revenue+=d.price*d.qty; itemData[d.name].orders++; }); });
+  const items = Object.values(itemData).sort((a,b)=>b.revenue-a.revenue);
+  const csv = ['Product,Qty Sold,Revenue,Orders',...items.map(i=>`"${i.name}",${i.qty},${i.revenue.toFixed(2)},${i.orders}`)].join('\n');
+  downloadCSV('analytics_'+new Date().toISOString().slice(0,10)+'.csv', csv);
+  showToast('📥 Analytics exported');
+}
+
+// =====================================================================
+// SHIFT MANAGEMENT
+// =====================================================================
+function startShift() {
+  if (currentShift) { showToast('⚠️ Shift already active'); return; }
+  const openingCash = parseFloat(prompt('Opening cash in drawer (₱):') || '0') || 0;
+  currentShift = {
+    id: 'SH-' + Date.now().toString(36).toUpperCase(),
+    user: currentUser.username,
+    userName: currentUser.name,
+    role: currentUser.role,
+    startTime: new Date().toISOString(),
+    openingCash,
+    register: registerId,
+  };
+  saveLocal('currentShift', currentShift);
+  logAudit('shift_started', { shiftId: currentShift.id, openingCash });
+  renderShiftBanner();
+  showToast('✅ Shift started');
+}
+
+function endShift() {
+  if (!currentShift) return;
+  const closingCash = parseFloat(prompt('Closing cash in drawer (₱):') || '0') || 0;
+  const shiftOrders = orderHistory.filter(o => {
+    const t = o._localTime ? new Date(o._localTime) : new Date(o.time || 0);
+    return t >= new Date(currentShift.startTime) && (o.processedBy?.username === currentShift.user || !o.processedBy);
+  });
+  const stats = getSalesStats(shiftOrders);
+  const cashSales = shiftOrders.filter(o => o.payment === 'Cash').reduce((s,o)=>s+(o.total||0),0);
+  const expectedCash = currentShift.openingCash + cashSales;
+  const variance = closingCash - expectedCash;
+
+  const report = {
+    ...currentShift,
+    endTime: new Date().toISOString(),
+    closingCash,
+    expectedCash,
+    variance,
+    totalSales: stats.totalSales,
+    totalOrders: stats.totalOrders,
+    cashSales,
+    cardSales: stats.byCard.reduce((s,o)=>s+(o.total||0),0),
+    gcashSales: stats.byGCash.reduce((s,o)=>s+(o.total||0),0),
+    mayaSales: stats.byMaya.reduce((s,o)=>s+(o.total||0),0),
+    totalDiscount: stats.totalDiscount,
+  };
+
+  shiftHistory = loadLocal('shiftHistory') || [];
+  shiftHistory.unshift(report);
+  saveLocal('shiftHistory', shiftHistory);
+  if (firebaseReady && db) db.ref('shifts/' + report.id).set(report).catch(() => {});
+
+  logAudit('shift_ended', { shiftId: report.id, totalSales: report.totalSales, variance });
+
+  // Show Z-Report
+  showZReport(report);
+  currentShift = null;
+  saveLocal('currentShift', null);
+  renderShiftBanner();
+}
+
+function renderShiftBanner() {
+  let banner = document.getElementById('shiftBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'shiftBanner';
+    banner.className = 'shift-banner';
+    const lowStock = document.getElementById('lowStockBanner');
+    lowStock.parentNode.insertBefore(banner, lowStock);
+  }
+  if (currentShift) {
+    const elapsed = Math.floor((Date.now() - new Date(currentShift.startTime).getTime()) / 60000);
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span>🟢 <span class="shift-id">${currentShift.id}</span> · ${currentShift.userName} · ⏱ ${elapsed}min</span>
+      <button onclick="endShift()" style="padding:5px 14px;border-radius:var(--radius-sm);border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;">End Shift</button>`;
+  } else {
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span style="color:var(--text3);">No active shift</span>
+      <button onclick="startShift()" style="padding:5px 14px;border-radius:var(--radius-sm);border:1px solid var(--green);background:transparent;color:var(--green);font-size:11px;font-weight:600;cursor:pointer;">Start Shift</button>`;
+  }
+}
+
+function showZReport(report) {
+  const fmt = v => '₱' + (v||0).toLocaleString('en',{minimumFractionDigits:2});
+  const start = new Date(report.startTime).toLocaleString('en-PH',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'});
+  const end = new Date(report.endTime).toLocaleString('en-PH',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'});
+  const varianceColor = report.variance >= 0 ? 'var(--green)' : 'var(--red)';
+  const win = window.open('','_blank','width=360,height=550');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Z-Report ${report.id}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Courier New',monospace;width:300px;margin:0 auto;padding:12px 0;font-size:12px;color:#000}
+  .center{text-align:center}.bold{font-weight:bold}.divider{border-top:1px dashed #000;margin:8px 0}
+  td{padding:3px 0;font-size:11px}table{width:100%;border-collapse:collapse}
+  @media print{body{margin:0;padding:0}@page{margin:2mm;size:80mm auto}}</style></head><body>
+  <div class="center bold" style="font-size:16px;">Z-REPORT</div>
+  <div class="center" style="font-size:11px;color:#666;">${report.id}</div>
+  <div class="divider"></div>
+  <table>
+    <tr><td>Cashier</td><td style="text-align:right;">${report.userName} (${report.role})</td></tr>
+    <tr><td>Register</td><td style="text-align:right;">${report.register || '-'}</td></tr>
+    <tr><td>Start</td><td style="text-align:right;">${start}</td></tr>
+    <tr><td>End</td><td style="text-align:right;">${end}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <table>
+    <tr class="bold"><td>Total Sales</td><td style="text-align:right;">${fmt(report.totalSales)}</td></tr>
+    <tr><td>Total Orders</td><td style="text-align:right;">${report.totalOrders}</td></tr>
+    <tr><td>Discounts</td><td style="text-align:right;color:#e74c3c;">-${fmt(report.totalDiscount)}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <table>
+    <tr><td>Cash Sales</td><td style="text-align:right;">${fmt(report.cashSales)}</td></tr>
+    <tr><td>Card Sales</td><td style="text-align:right;">${fmt(report.cardSales)}</td></tr>
+    <tr><td>GCash Sales</td><td style="text-align:right;">${fmt(report.gcashSales)}</td></tr>
+    <tr><td>Maya Sales</td><td style="text-align:right;">${fmt(report.mayaSales)}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <table>
+    <tr><td>Opening Cash</td><td style="text-align:right;">${fmt(report.openingCash)}</td></tr>
+    <tr><td>Expected Cash</td><td style="text-align:right;">${fmt(report.expectedCash)}</td></tr>
+    <tr><td>Closing Cash</td><td style="text-align:right;">${fmt(report.closingCash)}</td></tr>
+    <tr class="bold"><td>Variance</td><td style="text-align:right;color:${report.variance>=0?'green':'red'};">${report.variance>=0?'+':''}${fmt(report.variance)}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <div class="center" style="font-size:10px;color:#666;margin-top:8px;">Printed: ${new Date().toLocaleString('en-PH')}</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// =====================================================================
+// PRODUCT MODIFIERS
+// =====================================================================
+function initModifiers() {
+  modifierTemplates = loadLocal('modifierTemplates') || [
+    { id: 'size', name: 'Size', options: [{ name: 'Regular', price: 0 }, { name: 'Large', price: 30 }] },
+    { id: 'spice', name: 'Spice Level', options: [{ name: 'Mild', price: 0 }, { name: 'Medium', price: 0 }, { name: 'Extra Spicy', price: 10 }] },
+    { id: 'addons', name: 'Add-ons', options: [{ name: 'Extra Rice', price: 20 }, { name: 'Egg', price: 15 }, { name: 'Extra Sauce', price: 10 }] },
+  ];
+  saveLocal('modifierTemplates', modifierTemplates);
+}
+
+function showModifierPicker(firestoreId, callback) {
+  if (!modifierTemplates.length) { callback([]); return; }
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:360px;width:90%;max-height:80vh;overflow-y:auto;';
+  let html = '<div style="font-weight:700;font-size:15px;margin-bottom:12px;">🛠️ Customize Order</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;">📝 Special instructions</div>';
+  html += '<input type="text" id="modNotes" placeholder="e.g. no onions, extra crispy" style="width:100%;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;" />';
+  modifierTemplates.forEach((tpl, ti) => {
+    html += `<div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--accent);">${esc(tpl.name)}</div>`;
+    tpl.options.forEach((opt, oi) => {
+      html += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;cursor:pointer;">
+        <input type="checkbox" name="mod_${ti}" value="${oi}" style="accent-color:var(--accent);width:16px;height:16px;">
+        ${esc(opt.name)} ${opt.price > 0 ? `<span style="color:var(--accent);font-weight:600;">+₱${opt.price}</span>` : ''}
+      </label>`;
+    });
+  });
+  html += `<div style="display:flex;gap:8px;margin-top:16px;">
+    <button id="modSkip" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">Skip</button>
+    <button id="modAdd" style="flex:1;padding:10px;border:none;border-radius:var(--radius-sm);background:var(--accent);color:#000;font-weight:700;font-size:12px;cursor:pointer;">Add to Order</button>
+  </div>`;
+  box.innerHTML = html;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); callback(null); } });
+  box.querySelector('#modSkip').onclick = () => { overlay.remove(); callback([]); };
+  box.querySelector('#modAdd').onclick = () => {
+    const mods = [];
+    modifierTemplates.forEach((tpl, ti) => {
+      box.querySelectorAll(`input[name="mod_${ti}"]:checked`).forEach(cb => {
+        const opt = tpl.options[parseInt(cb.value)];
+        mods.push({ group: tpl.name, name: opt.name, price: opt.price || 0 });
+      });
+    });
+    const notes = box.querySelector('#modNotes').value.trim();
+    if (notes) mods.push({ group: 'Notes', name: notes, price: 0 });
+    overlay.remove();
+    callback(mods);
+  };
+}
+
+// =====================================================================
+// COMBO / BUNDLE DEALS
+// =====================================================================
+function initCombos() {
+  combos = loadLocal('combos') || [];
+}
+
+function checkComboDeals(cartItems) {
+  // Returns applicable combo discount
+  let totalDiscount = 0;
+  const appliedCombos = [];
+  combos.filter(c => c.active).forEach(combo => {
+    const comboItems = combo.items || [];
+    const cartIds = cartItems.map(c => c.firestoreId);
+    if (comboItems.every(id => cartIds.includes(id))) {
+      const regularTotal = comboItems.reduce((s, id) => {
+        const ci = cartItems.find(c => c.firestoreId === id);
+        return s + (ci ? ci.price : 0);
+      }, 0);
+      const savings = regularTotal - combo.comboPrice;
+      if (savings > 0) {
+        totalDiscount += savings;
+        appliedCombos.push({ name: combo.name, savings });
+      }
+    }
+  });
+  return { totalDiscount, appliedCombos };
+}
+
+// =====================================================================
+// SUPPLIER MANAGEMENT
+// =====================================================================
+function initSuppliers() {
+  suppliers = loadLocal('suppliers') || [];
+  purchaseOrders = loadLocal('purchaseOrders') || [];
+}
+
+// =====================================================================
+// DELIVERY / TAKEOUT
+// =====================================================================
+let orderType = 'dine-in'; // 'dine-in' | 'takeout' | 'delivery'
+
+function setOrderType(type) {
+  orderType = type;
+  document.querySelectorAll('.order-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  const tableEl = document.getElementById('tableInput');
+  const deliveryEl = document.getElementById('deliveryFields');
+  if (type === 'delivery') {
+    tableEl.placeholder = 'Customer Name';
+    if (deliveryEl) deliveryEl.style.display = 'block';
+  } else if (type === 'takeout') {
+    tableEl.placeholder = 'Customer Name';
+    if (deliveryEl) deliveryEl.style.display = 'none';
+  } else {
+    tableEl.placeholder = 'Table / Name';
+    if (deliveryEl) deliveryEl.style.display = 'none';
+  }
+}
+
+// =====================================================================
+// MULTI-LANGUAGE SUPPORT
+// =====================================================================
+const TRANSLATIONS = {
+  en: {
+    order: 'Order', today: 'Today', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly',
+    history: 'History', discounts: 'Discounts', report: 'Report', inventory: 'Inventory',
+    kitchen: 'Kitchen', monitoring: 'Monitoring', tables: 'Tables', customers: 'Customers',
+    analytics: 'Analytics', settings: 'Settings', signIn: 'Sign In', signOut: 'Sign Out',
+    currentOrder: 'Current Order', checkout: 'Proceed to Checkout', clearOrder: 'Clear Order',
+    addProduct: '+ Add Product', searchMenu: '🔍 Search menu items...',
+    forgotPassword: '🔑 Forgot Password?', confirmCharge: 'Confirm & Charge',
+  },
+  tl: {
+    order: 'Order', today: 'Ngayon', daily: 'Araw-araw', weekly: 'Lingguhan', monthly: 'Buwanan',
+    history: 'Kasaysayan', discounts: 'Diskwento', report: 'Ulat', inventory: 'Imbentaryo',
+    kitchen: 'Kusina', monitoring: 'Monitoring', tables: 'Mesa', customers: 'Customers',
+    analytics: 'Analytics', settings: 'Settings', signIn: 'Mag-login', signOut: 'Mag-logout',
+    currentOrder: 'Kasalukuyang Order', checkout: 'Mag-checkout', clearOrder: 'I-clear ang Order',
+    addProduct: '+ Dagdag Produkto', searchMenu: '🔍 Hanapin...',
+    forgotPassword: '🔑 Nakalimutan ang Password?', confirmCharge: 'Kumpirmahin',
+  },
+};
+
+function t(key) {
+  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  saveLocal('language', lang);
+  applyLanguage();
+}
+
+function applyLanguage() {
+  // Update tab buttons
+  const tabMap = { pos:'order', sales:'today', dailysales:'daily', weeklysales:'weekly', monthlysales:'monthly',
+    orders:'history', discounts:'discounts', report:'report', inventory:'inventory', kitchen:'kitchen',
+    monitoring:'monitoring', tables:'tables', customers:'customers', analytics:'analytics', settings:'settings' };
+  Object.entries(tabMap).forEach(([tabId, key]) => {
+    const el = document.getElementById('tab-' + tabId);
+    if (el) el.textContent = t(key);
+  });
+  // Update other UI elements
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.placeholder = t('searchMenu');
+  const cartTitle = document.querySelector('.cart-title');
+  if (cartTitle) cartTitle.textContent = t('currentOrder');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn && !checkoutBtn.disabled) checkoutBtn.textContent = t('checkout');
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.textContent = t('signOut');
+}
+
+// =====================================================================
+// THERMAL RECEIPT FORMATTING
+// =====================================================================
+function printThermalReceipt(order, payInfo) {
+  const biz = businessConfig;
+  const fmt = v => '₱' + (v || 0).toLocaleString('en', { minimumFractionDigits: 2 });
+  const e = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+
+  let itemRows = '';
+  (order.itemDetails || []).forEach(d => {
+    itemRows += `<tr><td style="max-width:120px;word-wrap:break-word;">${d.emoji||''} ${e(d.name)}</td><td style="text-align:center;">${d.qty}</td><td style="text-align:right;">${fmt(d.price * d.qty)}</td></tr>`;
+    // Modifiers
+    if (d.modifiers && d.modifiers.length) {
+      d.modifiers.forEach(m => {
+        itemRows += `<tr><td colspan="2" style="padding-left:12px;font-size:9px;color:#666;">+ ${e(m.name)}</td><td style="text-align:right;font-size:9px;">${m.price > 0 ? fmt(m.price) : ''}</td></tr>`;
+      });
+    }
+  });
+
+  let paySection = '';
+  if (order.splitPayments && order.splitPayments.length) {
+    paySection = order.splitPayments.map(sp => `<tr><td>${sp.method}</td><td style="text-align:right;">${fmt(sp.amount)}</td></tr>`).join('');
+    if (order.change > 0.01) paySection += `<tr><td><strong>Change</strong></td><td style="text-align:right;"><strong>${fmt(order.change)}</strong></td></tr>`;
+  } else if (order.payment === 'Cash') {
+    paySection = `<tr><td>Cash</td><td style="text-align:right;">${fmt(payInfo.cashTendered)}</td></tr>
+      <tr><td><strong>Change</strong></td><td style="text-align:right;"><strong>${fmt(payInfo.change)}</strong></td></tr>`;
+  } else {
+    paySection = `<tr><td>${order.payment}</td><td style="text-align:right;">${payInfo.paymentRef || '-'}</td></tr>`;
+  }
+
+  const win = window.open('', '_blank', 'width=320,height=600');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${order.id}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Courier New',monospace;width:72mm;margin:0 auto;padding:3mm 0;font-size:11px;color:#000;line-height:1.4;}
+    .center{text-align:center}.bold{font-weight:bold}
+    .divider{border-top:1px dashed #000;margin:4px 0}
+    .divider-double{border-top:2px double #000;margin:6px 0}
+    table{width:100%;border-collapse:collapse}td{padding:1px 0;font-size:10px;vertical-align:top}
+    .total-row td{font-size:14px;font-weight:bold;padding-top:4px}
+    @media print{body{margin:0;padding:0}@page{margin:1mm;size:80mm auto}}
+  </style></head><body>
+    <div class="center bold" style="font-size:14px;">${e(biz.name || 'KAIN POS')}</div>
+    ${biz.address ? `<div class="center" style="font-size:9px;">${e(biz.address)}</div>` : ''}
+    ${biz.phone ? `<div class="center" style="font-size:9px;">Tel: ${e(biz.phone)}</div>` : ''}
+    ${biz.tin ? `<div class="center" style="font-size:9px;">TIN: ${e(biz.tin)}</div>` : ''}
+    <div class="divider-double"></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;">
+      <span>${order.id} ${order.orderType && order.orderType !== 'dine-in' ? '('+order.orderType.toUpperCase()+')' : ''}</span><span>${e(order.table)}</span>
+    </div>
+    <div style="font-size:9px;color:#666;">${dateStr} ${timeStr} · ${e(order.processedBy?.name||'')}</div>
+    ${currentShift ? `<div style="font-size:9px;color:#666;">Shift: ${currentShift.id}</div>` : ''}
+    <div class="divider"></div>
+    <table>
+      <thead><tr><td class="bold">Item</td><td class="bold center">Qty</td><td class="bold" style="text-align:right;">Amt</td></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <div class="divider"></div>
+    <table>
+      <tr><td>Subtotal</td><td style="text-align:right;">${fmt(order.subtotal)}</td></tr>
+      ${order.discount ? `<tr><td>${order.discountType==='senior'?'Senior Disc.':'Manual Disc.'}</td><td style="text-align:right;color:#c00;">-${fmt(order.discount)}</td></tr>` : ''}
+      <tr><td>Tax</td><td style="text-align:right;">${fmt(order.tax)}</td></tr>
+      <tr class="total-row"><td>TOTAL</td><td style="text-align:right;">${fmt(order.total)}</td></tr>
+    </table>
+    <div class="divider"></div>
+    <table>${paySection}</table>
+    ${order.seniorInfo ? `<div style="font-size:9px;margin-top:4px;">SC: ${e(order.seniorInfo.id)} - ${e(order.seniorInfo.name)}</div>` : ''}
+    ${order.deliveryAddress ? `<div style="font-size:9px;margin-top:4px;">📍 ${e(order.deliveryAddress)}</div>` : ''}
+    <div class="divider-double"></div>
+    <div class="center" style="font-size:10px;margin-top:4px;">Thank you! Please come again 🙏</div>
+    <div class="center" style="font-size:8px;color:#999;margin-top:4px;">${e(biz.name||'KAIN POS')} · Powered by KAIN POS</div>
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// =====================================================================
+// EMAIL RECEIPTS (placeholder — requires backend/service integration)
+// =====================================================================
+function emailReceipt(order, email) {
+  // In a real deployment, this would call a Firebase Cloud Function or email API
+  // For now, show a toast with instructions
+  if (!email) {
+    email = prompt('Enter customer email address:');
+    if (!email || !email.includes('@')) { showToast('❌ Invalid email'); return; }
+  }
+  // Store email request for later processing
+  const emailQueue = loadLocal('emailQueue') || [];
+  emailQueue.push({
+    orderId: order.id,
+    email,
+    total: order.total,
+    date: new Date().toISOString(),
+    status: 'pending'
+  });
+  saveLocal('emailQueue', emailQueue);
+  showToast(`📧 Receipt queued for ${email}. Connect email service in Settings to send.`);
+}
+
+// =====================================================================
+// ACCESSIBILITY — KEYBOARD NAV + ARIA
+// =====================================================================
+function initAccessibility() {
+  // Skip to main content link
+  const skip = document.createElement('a');
+  skip.href = '#view-pos';
+  skip.textContent = 'Skip to main content';
+  skip.style.cssText = 'position:absolute;top:-40px;left:0;background:var(--accent);color:#000;padding:8px;z-index:9999;font-size:14px;transition:top .2s;';
+  skip.onfocus = () => skip.style.top = '0';
+  skip.onblur = () => skip.style.top = '-40px';
+  document.body.prepend(skip);
+
+  // Add ARIA roles to key elements
+  const ariaMap = {
+    'topbar-tabs': { role: 'tablist', label: 'Main navigation' },
+    'menuGrid': { role: 'grid', label: 'Menu items' },
+    'cartItems': { role: 'list', label: 'Cart items' },
+    'invGrid': { role: 'grid', label: 'Inventory grid' },
+    'kitchenGrid': { role: 'list', label: 'Kitchen orders' },
+    'tableFloor': { role: 'grid', label: 'Table layout' },
+  };
+  Object.entries(ariaMap).forEach(([id, attrs]) => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('role', attrs.role); el.setAttribute('aria-label', attrs.label); }
+  });
+
+  // Tab buttons get tab role
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('tabindex', '0');
+  });
+
+  // Keyboard shortcut handler
+  document.addEventListener('keydown', e => {
+    // Alt + shortcuts for power users
+    if (e.altKey) {
+      const shortcuts = { '1':'pos','2':'orders','3':'kitchen','4':'inventory','5':'tables','6':'settings','n':'pos','k':'kitchen' };
+      const view = shortcuts[e.key];
+      if (view) {
+        e.preventDefault();
+        const btn = document.getElementById('tab-' + view);
+        if (btn && btn.style.display !== 'none') switchView(view, btn);
+      }
+    }
+    // Escape to close modals
+    if (e.key === 'Escape') {
+      const openModals = document.querySelectorAll('.modal-overlay.open, [id$="Modal"][style*="display: flex"], [id$="Modal"][style*="display:flex"]');
+      openModals.forEach(m => m.style.display = 'none');
+    }
+  });
+
+  // High contrast mode support
+  if (window.matchMedia && window.matchMedia('(prefers-contrast: high)').matches) {
+    document.documentElement.style.setProperty('--border', '#555');
+    document.documentElement.style.setProperty('--text3', '#999');
+  }
+}
+
+// =====================================================================
+// TAX CONFIGURATION
+// =====================================================================
+let taxConfig = {
+  rate: 0.12,
+  inclusive: false, // if true, prices already include tax
+  exemptCategories: [],
+};
+
+function initTaxConfig() {
+  const saved = loadLocal('taxConfig');
+  if (saved) Object.assign(taxConfig, saved);
+}
+
+function saveTaxConfig() {
+  const rate = parseFloat(document.getElementById('cfg-tax-rate')?.value) || 12;
+  const inclusive = document.getElementById('cfg-tax-inclusive')?.checked || false;
+  taxConfig.rate = rate / 100;
+  taxConfig.inclusive = inclusive;
+  saveLocal('taxConfig', taxConfig);
+  if (firebaseReady && db) db.ref('settings/taxConfig').set(taxConfig).catch(() => {});
+  showToast('✅ Tax settings saved');
+}
+
+function renderTaxPanel() {
+  document.getElementById('cfg-tax-rate').value = (taxConfig.rate * 100).toFixed(1);
+  document.getElementById('cfg-tax-inclusive').checked = taxConfig.inclusive;
+}
+
+function renderModifiersPanel() {
+  const el = document.getElementById('modifiersPanelContent');
+  let html = `<button class="save-btn" onclick="addModifierTemplate()" style="margin-bottom:12px;">➕ Add Modifier Group</button>`;
+  modifierTemplates.forEach((tpl, idx) => {
+    html += `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;background:var(--surface2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <input type="text" value="${esc(tpl.name)}" onchange="modifierTemplates[${idx}].name=this.value;saveLocal('modifierTemplates',modifierTemplates)" style="font-weight:700;font-size:13px;background:transparent;border:none;color:var(--text);width:60%;" />
+        <button class="cat-action-btn del" onclick="modifierTemplates.splice(${idx},1);saveLocal('modifierTemplates',modifierTemplates);renderModifiersPanel()">🗑️</button>
+      </div>
+      ${tpl.options.map((opt, oi) => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+        <input type="text" value="${esc(opt.name)}" onchange="modifierTemplates[${idx}].options[${oi}].name=this.value;saveLocal('modifierTemplates',modifierTemplates)" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:11px;" placeholder="Option name" />
+        <span style="font-size:11px;">₱</span>
+        <input type="number" value="${opt.price}" onchange="modifierTemplates[${idx}].options[${oi}].price=parseFloat(this.value)||0;saveLocal('modifierTemplates',modifierTemplates)" style="width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:11px;" />
+        <button class="cat-action-btn del" onclick="modifierTemplates[${idx}].options.splice(${oi},1);saveLocal('modifierTemplates',modifierTemplates);renderModifiersPanel()" style="font-size:10px;">✕</button>
+      </div>`).join('')}
+      <button onclick="modifierTemplates[${idx}].options.push({name:'',price:0});saveLocal('modifierTemplates',modifierTemplates);renderModifiersPanel()" style="font-size:10px;padding:4px 10px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--accent);cursor:pointer;margin-top:4px;">+ Add Option</button>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function addModifierTemplate() {
+  modifierTemplates.push({ id: 'mod_' + Date.now(), name: 'New Group', options: [{ name: 'Option 1', price: 0 }] });
+  saveLocal('modifierTemplates', modifierTemplates);
+  renderModifiersPanel();
+}
+
+function renderCombosPanel() {
+  const el = document.getElementById('combosPanelContent');
+  let html = `<button class="save-btn" onclick="addCombo()" style="margin-bottom:12px;">➕ Add Combo Deal</button>`;
+  combos.forEach((c, idx) => {
+    const itemNames = (c.items || []).map(id => { const inv = inventory.find(x => x.firestoreId === id); return inv ? inv.name : id; });
+    html += `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;background:var(--surface2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${esc(c.name)} ${c.active ? '🟢':'🔴'}</div>
+          <div style="font-size:11px;color:var(--text3);">Items: ${itemNames.map(n=>esc(n)).join(', ') || 'None'}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--green);">Combo Price: ₱${c.comboPrice}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="cat-action-btn" onclick="combos[${idx}].active=!combos[${idx}].active;saveLocal('combos',combos);renderCombosPanel()">${c.active?'⏸️':'▶️'}</button>
+          <button class="cat-action-btn del" onclick="combos.splice(${idx},1);saveLocal('combos',combos);renderCombosPanel()">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  if (!combos.length) html += '<div style="text-align:center;padding:20px;color:var(--text3);">No combo deals yet.</div>';
+  el.innerHTML = html;
+}
+
+function addCombo() {
+  const name = prompt('Combo name:');
+  if (!name) return;
+  const price = parseFloat(prompt('Combo price (₱):') || '0');
+  combos.push({ id: 'CMB_' + Date.now(), name, items: [], comboPrice: price, active: true });
+  saveLocal('combos', combos);
+  renderCombosPanel();
+  showToast('✅ Combo created. Add items by editing inventory.');
+}
+
+function renderSuppliersPanel() {
+  const el = document.getElementById('suppliersPanelContent');
+  let html = `<button class="save-btn" onclick="addSupplier()" style="margin-bottom:12px;">➕ Add Supplier</button>`;
+  suppliers.forEach((s, idx) => {
+    html += `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;background:var(--surface2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">🏭 ${esc(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3);">${s.contact ? '📱 '+esc(s.contact) : ''} ${s.email ? '· ✉️ '+esc(s.email) : ''}</div>
+        </div>
+        <button class="cat-action-btn del" onclick="suppliers.splice(${idx},1);saveLocal('suppliers',suppliers);renderSuppliersPanel()">🗑️</button>
+      </div>
+    </div>`;
+  });
+  if (!suppliers.length) html += '<div style="text-align:center;padding:20px;color:var(--text3);">No suppliers yet.</div>';
+  el.innerHTML = html;
+}
+
+function addSupplier() {
+  const name = prompt('Supplier name:');
+  if (!name) return;
+  const contact = prompt('Contact number:') || '';
+  const email = prompt('Email:') || '';
+  suppliers.push({ id: 'SUP_' + Date.now(), name, contact, email, items: [] });
+  saveLocal('suppliers', suppliers);
+  if (firebaseReady && db) db.ref('suppliers').set(suppliers).catch(() => {});
+  renderSuppliersPanel();
+  showToast('✅ Supplier added');
+}
+
+function renderLanguagePanel() {
+  const el = document.getElementById('languagePanelContent');
+  el.innerHTML = `<div style="font-size:13px;margin-bottom:12px;">Select the display language for the POS interface:</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="setLanguage('en')" class="order-type-btn ${currentLang==='en'?'active':''}" style="flex:1;padding:14px;font-size:14px;">🇺🇸 English</button>
+      <button onclick="setLanguage('tl')" class="order-type-btn ${currentLang==='tl'?'active':''}" style="flex:1;padding:14px;font-size:14px;">🇵🇭 Filipino</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px;">Tab labels and common UI text will be translated.</div>`;
+}
+
+function renderShiftsPanel() {
+  const el = document.getElementById('shiftsPanelContent');
+  const history = loadLocal('shiftHistory') || [];
+  if (!history.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);">No shift history yet. Start a shift from the shift banner.</div>'; return; }
+  const fmt = v => '₱' + (v||0).toLocaleString('en',{minimumFractionDigits:2});
+  el.innerHTML = history.slice(0,20).map(r => {
+    const start = new Date(r.startTime).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const end = r.endTime ? new Date(r.endTime).toLocaleString('en-PH',{hour:'2-digit',minute:'2-digit'}) : 'Active';
+    const vColor = (r.variance||0) >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:6px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:12px;">${r.id}</div>
+        <div style="font-size:11px;color:var(--text3);">${r.userName} · ${start} → ${end}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:13px;font-weight:700;color:var(--green);">${fmt(r.totalSales)}</div>
+        <div style="font-size:10px;color:${vColor};">Var: ${(r.variance||0)>=0?'+':''}${fmt(r.variance)}</div>
+      </div>
+      <button class="cat-action-btn" onclick="showZReport(${JSON.stringify(r).replace(/"/g,'&quot;')})">🖨️</button>
+    </div>`;
+  }).join('');
+}
+
+function selectCustomer(id) {
+  // Update customer picker in cart
+  if (!id) return;
+  const c = customers.find(x => x.id === id);
+  if (c) showToast(`👤 ${c.name} selected`);
+}
+
+function populateCustomerPicker() {
+  const picker = document.getElementById('customerPicker');
+  if (!picker) return;
+  const current = picker.value;
+  picker.innerHTML = '<option value="">👤 Walk-in Customer</option>' +
+    customers.map(c => `<option value="${c.id}">${esc(c.name)} ${c.phone ? '('+esc(c.phone)+')' : ''}</option>`).join('');
+  picker.value = current;
+}
+
+// =====================================================================
 // INIT
 // =====================================================================
 async function appInit() {
   loadFromLocalFallback();
   loadPendingOrders();
+  initTables(); initCustomers(); initModifiers(); initCombos(); initSuppliers(); initTaxConfig();
+  currentShift = loadLocal('currentShift') || null;
+  currentLang = loadLocal('language') || 'en';
+  initAccessibility();
   showLoader('Connecting to server…');
   try {
     await initFirebase();
@@ -6726,6 +8142,7 @@ async function appInit() {
   registerServiceWorker();
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-username').focus();
+  applyLanguage();
 }
 
 function loadFromLocalFallback() {
@@ -6748,6 +8165,7 @@ function loadFromLocalFallback() {
   }
   kitchenOrders = loadLocal('kitchenOrders') || [];
   migrateKitchenOrders();
+  shiftHistory = loadLocal('shiftHistory') || [];
   applyBusinessConfig();
 }
 
