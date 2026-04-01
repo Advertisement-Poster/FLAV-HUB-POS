@@ -2297,7 +2297,7 @@
 <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 <!-- Firebase SDK (v9 compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <script>
 // =====================================================================
@@ -2405,154 +2405,156 @@ function hideLoader() {
 // =====================================================================
 // FIREBASE INIT
 // =====================================================================
-function initFirebase() {
+async function initFirebase() {
   if (!FIREBASE_CONFIG.apiKey) {
     console.warn('Firebase config is empty');
+    firebaseReady = false;
     return false;
   }
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
+    db = firebase.database();
+    // Test connectivity with a real write
+    await withTimeout(db.ref('_test/ping').set({ t: Date.now() }), 8000);
     firebaseReady = true;
-    (async function testFirestore() {
-      try {
-        await db.collection('_test').doc('ping').set({ t: Date.now() });
-        showToast('✅ Firebase connected — data will sync');
-        db.collection('_test').doc('ping').delete().catch(() => {});
-      } catch(e) {
-        console.error('Firestore test write failed:', e);
-        if (e.code === 'permission-denied') {
-          firebaseReady = false;
-          showToast('🔴 Firebase BLOCKED — Security Rules deny access.', 8000);
-        } else {
-          showToast('⚠️ Firebase error: ' + e.code + ' — ' + e.message, 6000);
-        }
-      }
-    })();
+    showToast('✅ Firebase connected — data will sync');
+    db.ref('_test/ping').remove().catch(() => {});
     return true;
-  } catch (e) {
-    console.error('Firebase init failed:', e);
+  } catch(e) {
+    console.error('Firebase init/test failed:', e);
+    firebaseReady = false;
+    if (e.code === 'PERMISSION_DENIED') {
+      showToast('🔴 Firebase BLOCKED — Go to Firebase Console → Realtime Database → Rules → set test mode', 10000);
+    } else if (e.message && e.message.includes('Timeout')) {
+      showToast('⚠️ Firebase timeout — check if Realtime Database is created in Console', 8000);
+    } else {
+      showToast('⚠️ Firebase error: ' + (e.code || '') + ' ' + (e.message || ''), 8000);
+    }
     return false;
   }
 }
 
 // =====================================================================
-// FIRESTORE — INVENTORY
+// REALTIME DB — INVENTORY
 // =====================================================================
 async function loadInventoryFromFirestore() {
   try {
-    const snap = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
-    if (snap.empty) {
-      // Cloud is empty — push local data to Firestore if we have any
+    const snap = await withTimeout(db.ref('inventory').once('value'), 8000);
+    const data = snap.val();
+    if (!data) {
+      // Cloud is empty — push local data if we have any
       const localInv = loadLocal('inventory');
       if (localInv && localInv.length && localInv[0].firestoreId !== 'local_0') {
-        console.log('Syncing local inventory to Firestore…');
+        console.log('Syncing local inventory to RTDB…');
         showToast('☁️ Uploading local data to cloud…');
-        const batch = db.batch();
+        const updates = {};
         localInv.forEach(item => {
           const { firestoreId, ...rest } = item;
-          const ref = firestoreId && !firestoreId.startsWith('local_') ? db.collection('inventory').doc(firestoreId) : db.collection('inventory').doc();
-          batch.set(ref, rest);
+          const key = firestoreId && !firestoreId.startsWith('local_') ? firestoreId : db.ref('inventory').push().key;
+          updates['inventory/' + key] = rest;
         });
-        await withTimeout(batch.commit(), 10000);
-        const snap2 = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
-        if (!snap2.empty) {
-          inventory = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        await withTimeout(db.ref().update(updates), 10000);
+        const snap2 = await withTimeout(db.ref('inventory').once('value'), 8000);
+        const data2 = snap2.val();
+        if (data2) {
+          inventory = Object.entries(data2).map(([k, v]) => ({ firestoreId: k, ...v }));
         }
       } else {
         await withTimeout(seedInventory(), 8000);
-        const snap2 = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
-        if (!snap2.empty) {
-          inventory = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        const snap2 = await withTimeout(db.ref('inventory').once('value'), 8000);
+        const data2 = snap2.val();
+        if (data2) {
+          inventory = Object.entries(data2).map(([k, v]) => ({ firestoreId: k, ...v }));
         }
       }
     } else {
-      inventory = snap.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+      inventory = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
     }
     if (inventory.length) {
+      inventory.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       categories = [...new Set(inventory.map(i => i.cat))];
       saveLocal('inventory', inventory);
       saveLocal('categories', categories);
     }
   } catch(e) {
-    console.error('Failed to load inventory from Firestore:', e);
-    if (e.code === 'permission-denied') {
-      showToast('🔴 Firestore denied — update Security Rules');
+    console.error('Failed to load inventory from RTDB:', e);
+    if (e.code === 'PERMISSION_DENIED') {
+      showToast('🔴 Firebase denied — update Security Rules');
     }
   }
 }
 
 async function seedInventory() {
-  const batch = db.batch();
+  const updates = {};
   SEED_MENU.forEach(item => {
-    const ref = db.collection('inventory').doc();
-    batch.set(ref, item);
+    const key = db.ref('inventory').push().key;
+    updates['inventory/' + key] = item;
   });
-  await batch.commit();
+  await db.ref().update(updates);
 }
 
 async function saveProductToFirestore(data) {
   if (!firebaseReady) return;
   if (data.firestoreId) {
     const { firestoreId, ...rest } = data;
-    await db.collection('inventory').doc(firestoreId).set(rest);
+    await db.ref('inventory/' + firestoreId).set(rest);
   } else {
-    const ref = await db.collection('inventory').add(data);
-    data.firestoreId = ref.id;
+    const ref = db.ref('inventory').push();
+    data.firestoreId = ref.key;
+    const { firestoreId, ...rest } = data;
+    await ref.set(rest);
   }
 }
 
 async function deleteProductFromFirestore(firestoreId) {
   if (!firebaseReady) return;
-  await db.collection('inventory').doc(firestoreId).delete();
+  await db.ref('inventory/' + firestoreId).remove();
 }
 
 async function updateStockInFirestore(firestoreId, newStock) {
   if (!firebaseReady) return;
-  await db.collection('inventory').doc(firestoreId).update({ stock: newStock });
+  await db.ref('inventory/' + firestoreId + '/stock').set(newStock);
 }
 
 async function updateVisibilityInFirestore(firestoreId, visible) {
   if (!firebaseReady) return;
-  await db.collection('inventory').doc(firestoreId).update({ visible });
+  await db.ref('inventory/' + firestoreId + '/visible').set(visible);
 }
 
 // =====================================================================
-// FIRESTORE — ORDERS
+// REALTIME DB — ORDERS
 // =====================================================================
 async function loadOrdersFromFirestore() {
-  let firestoreOrders = [];
+  let rtdbOrders = [];
   try {
-    const snap = await withTimeout(db.collection('orders').orderBy('createdAt', 'desc').limit(200).get(), 8000);
-    firestoreOrders = snap.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
-  } catch(e) {
-    console.warn('Ordered query failed, trying unordered:', e);
-    try {
-      const snap2 = await withTimeout(db.collection('orders').limit(200).get(), 8000);
-      firestoreOrders = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
-      firestoreOrders.sort((a, b) => {
-        const da = a._localTime ? new Date(a._localTime) : (a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date(0));
-        const dateB = b._localTime ? new Date(b._localTime) : (b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(0));
-        return dateB - da;
+    const snap = await withTimeout(db.ref('orders').limitToLast(200).once('value'), 8000);
+    const data = snap.val();
+    if (data) {
+      rtdbOrders = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
+      rtdbOrders.sort((a, b) => {
+        const da = a._localTime ? new Date(a._localTime) : new Date(a.createdAt || 0);
+        const db2 = b._localTime ? new Date(b._localTime) : new Date(b.createdAt || 0);
+        return db2 - da;
       });
-    } catch(e2) {
-      console.error('Failed to load orders from Firestore:', e2);
     }
+  } catch(e) {
+    console.warn('Failed to load orders from RTDB:', e);
   }
   // If cloud is empty but local has orders, sync them up
-  if (!firestoreOrders.length && orderHistory.length) {
-    console.log('Syncing local orders to Firestore…');
-    for (const order of orderHistory.slice(0, 100)) {
-      try {
-        const { firestoreId, ...rest } = order;
-        await db.collection('orders').add({ ...rest, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-      } catch(e) { break; }
-    }
+  if (!rtdbOrders.length && orderHistory.length) {
+    console.log('Syncing local orders to RTDB…');
+    const updates = {};
+    orderHistory.slice(0, 100).forEach(order => {
+      const { firestoreId, ...rest } = order;
+      const key = db.ref('orders').push().key;
+      updates['orders/' + key] = { ...rest, createdAt: firebase.database.ServerValue.TIMESTAMP };
+    });
+    try { await withTimeout(db.ref().update(updates), 10000); } catch(e) { console.warn('Order sync failed:', e); }
   }
-  if (firestoreOrders.length) {
-    const fsIds = new Set(firestoreOrders.map(o => o.firestoreId));
+  if (rtdbOrders.length) {
+    const fsIds = new Set(rtdbOrders.map(o => o.firestoreId));
     const localOnly = orderHistory.filter(o => (o.firestoreId && !fsIds.has(o.firestoreId)) || !o.firestoreId);
-    orderHistory = [...firestoreOrders, ...localOnly];
+    orderHistory = [...rtdbOrders, ...localOnly];
   }
   saveLocal('orders', orderHistory);
 }
@@ -2560,31 +2562,32 @@ async function loadOrdersFromFirestore() {
 async function saveOrderToFirestore(order) {
   if (!firebaseReady) return;
   try {
-    const ref = await db.collection('orders').add({ ...order, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    order.firestoreId = ref.id;
+    const ref = db.ref('orders').push();
+    await ref.set({ ...order, createdAt: firebase.database.ServerValue.TIMESTAMP });
+    order.firestoreId = ref.key;
   } catch(e) {
-    console.error('Failed to save order to Firestore:', e);
-    if (e.code === 'permission-denied') {
-      showToast('🔴 Cannot save to Firestore — update Security Rules');
+    console.error('Failed to save order to RTDB:', e);
+    if (e.code === 'PERMISSION_DENIED') {
+      showToast('🔴 Cannot save to Firebase — update Security Rules');
     }
   }
 }
 
 // =====================================================================
-// FIRESTORE — SETTINGS
+// REALTIME DB — SETTINGS
 // =====================================================================
 async function loadSettingsFromFirestore() {
   try {
-    const doc = await withTimeout(db.collection('settings').doc('cloudinary').get(), 6000);
-    if (doc.exists) {
-      cloudinaryConfig = doc.data();
+    const snap = await withTimeout(db.ref('settings/cloudinary').once('value'), 6000);
+    if (snap.exists()) {
+      cloudinaryConfig = snap.val();
       saveLocal('cloudinary', cloudinaryConfig);
     }
   } catch(e) { console.warn('Could not load settings:', e); }
   try {
-    const bizDoc = await withTimeout(db.collection('settings').doc('business').get(), 6000);
-    if (bizDoc.exists) {
-      Object.assign(businessConfig, bizDoc.data());
+    const snap = await withTimeout(db.ref('settings/business').once('value'), 6000);
+    if (snap.exists()) {
+      Object.assign(businessConfig, snap.val());
       saveLocal('business', businessConfig);
     }
   } catch(e) { console.warn('Could not load business config:', e); }
@@ -2592,36 +2595,39 @@ async function loadSettingsFromFirestore() {
 }
 
 // =====================================================================
-// FIRESTORE — CATEGORIES
+// REALTIME DB — CATEGORIES
 // =====================================================================
 async function saveCategoriesToFirestore() {
   if (!firebaseReady) return;
-  await db.collection('settings').doc('categories').set({ list: categories });
+  await db.ref('settings/categories').set(categories);
 }
 
 async function loadCategoriesFromFirestore() {
   if (!firebaseReady) return;
-  const doc = await db.collection('settings').doc('categories').get();
-  if (doc.exists && doc.data().list) {
-    categories = doc.data().list;
+  const snap = await db.ref('settings/categories').once('value');
+  if (snap.exists() && Array.isArray(snap.val())) {
+    categories = snap.val();
   } else if (categories.length) {
-    // Cloud empty, push local categories
     await saveCategoriesToFirestore();
   }
 }
 
 // =====================================================================
-// FIRESTORE — USERS
+// REALTIME DB — USERS
 // =====================================================================
 async function loadUsersFromFirestore() {
   try {
-    const snap = await withTimeout(db.collection('users').orderBy('role').get(), 8000);
-    users = snap.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
-    saveLocal('users', users);
+    const snap = await withTimeout(db.ref('users').once('value'), 8000);
+    const data = snap.val();
+    if (data) {
+      users = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
+      users.sort((a, b) => (a.role || '').localeCompare(b.role || ''));
+      saveLocal('users', users);
+    }
     return users;
   } catch(e) {
     console.error('Failed to load users:', e);
-    if (e.code === 'permission-denied') showToast('🔴 Cannot load users — check Firestore rules');
+    if (e.code === 'PERMISSION_DENIED') showToast('🔴 Cannot load users — check Firebase rules');
     return users;
   }
 }
@@ -2723,7 +2729,7 @@ async function saveBusinessConfig() {
   applyBusinessConfig();
   saveLocal('business', businessConfig);
   if (firebaseReady) {
-    try { await db.collection('settings').doc('business').set(businessConfig); } catch(e) { console.warn('Could not save business config:', e); }
+    try { await db.ref('settings/business').set(businessConfig); } catch(e) { console.warn('Could not save business config:', e); }
   }
   toggleBusinessSection();
   showToast('🎉 Business settings saved!');
@@ -2999,9 +3005,11 @@ async function authorizeDiscount(source) {
     let userData = null;
     if (firebaseReady && db) {
       try {
-        const snap = await withTimeout(db.collection('users').where('username','==',userInput).where('password','==',passInput).limit(1).get(), 6000);
-        if (!snap.empty) userData = snap.docs[0].data();
-      } catch(e) { console.warn('Firestore auth lookup failed, using local:', e); }
+        const snap = await withTimeout(db.ref('users').orderByChild('username').equalTo(userInput).once('value'), 6000);
+        if (snap.exists()) {
+          snap.forEach(child => { const u = child.val(); if (u.password === passInput) userData = { firestoreId: child.key, ...u }; });
+        }
+      } catch(e) { console.warn('RTDB auth lookup failed, using local:', e); }
     }
     if (!userData) userData = users.find(u => u.username === userInput && u.password === passInput) || null;
     if (!userData) {
@@ -4942,13 +4950,13 @@ async function saveEditCategory(idx) {
   saveLocal('inventory', inventory);
   saveLocal('categories', categories);
   if (firebaseReady) {
-    const batch = db.batch();
+    const updates = {};
     inventory.forEach(item => {
       if (item.cat === newName && item.firestoreId) {
-        batch.update(db.collection('inventory').doc(item.firestoreId), { cat: newName });
+        updates['inventory/' + item.firestoreId + '/cat'] = newName;
       }
     });
-    await batch.commit();
+    if (Object.keys(updates).length) await db.ref().update(updates);
   }
   await saveCategoriesToFirestore();
   renderCategoryList(); renderCategories(); renderMenu();
@@ -5166,19 +5174,19 @@ async function seedDefaultAdmin() {
   users = loadLocal('users') || [];
   if (firebaseReady && db) {
     try {
-      const snap = await withTimeout(db.collection('users').limit(1).get(), 6000);
-      if (snap.empty) {
+      const snap = await withTimeout(db.ref('users').limitToFirst(1).once('value'), 6000);
+      if (!snap.exists()) {
         const admin = { username: 'admin', password: 'admin123', name: 'Administrator', role: 'admin', permissions: ROLE_DEFAULTS.admin };
-        const ref = await db.collection('users').doc('admin').set(admin);
+        await db.ref('users/admin').set(admin);
         admin.firestoreId = 'admin';
         users = [admin];
         saveLocal('users', users);
       } else {
-        // Firestore has users, load them
+        // RTDB has users, load them
         await loadUsersFromFirestore();
       }
       return;
-    } catch(e) { console.warn('Firestore seedDefaultAdmin failed, using local:', e); }
+    } catch(e) { console.warn('RTDB seedDefaultAdmin failed, using local:', e); }
   }
   if (users.length === 0) {
     users.push({
@@ -5203,15 +5211,17 @@ async function doLogin() {
   errEl.style.display = 'none';
 
   let found = null;
-  // Try Firestore first
+  // Try Realtime DB first
   if (firebaseReady && db) {
     try {
-      const snap = await withTimeout(db.collection('users').where('username','==',username).where('password','==',password).limit(1).get(), 5000);
-      if (!snap.empty) {
-        const doc = snap.docs[0];
-        found = { firestoreId: doc.id, ...doc.data() };
+      const snap = await withTimeout(db.ref('users').orderByChild('username').equalTo(username).once('value'), 5000);
+      if (snap.exists()) {
+        snap.forEach(child => {
+          const u = child.val();
+          if (u.password === password) found = { firestoreId: child.key, ...u };
+        });
       }
-    } catch(e) { console.warn('Firestore login failed, using local:', e); }
+    } catch(e) { console.warn('RTDB login failed, using local:', e); }
   }
   // Fallback to localStorage
   if (!found) found = users.find(u => u.username === username && u.password === password) || null;
@@ -5404,8 +5414,8 @@ async function saveNewUser() {
       try {
         const updateData = { name, role, permissions };
         if (password) updateData.password = password;
-        await db.collection('users').doc(editingUserId).update(updateData);
-      } catch(e) { console.warn('Firestore user update failed:', e); }
+        await db.ref('users/' + editingUserId).update(updateData);
+      } catch(e) { console.warn('RTDB user update failed:', e); }
     }
     // If editing self, update currentUser in memory
     if (editingUserId === currentUser.firestoreId) {
@@ -5428,9 +5438,10 @@ async function saveNewUser() {
     const newUser = { username, password, name, role, permissions };
     if (firebaseReady && db) {
       try {
-        const ref = await db.collection('users').add(newUser);
-        newUser.firestoreId = ref.id;
-      } catch(e) { console.warn('Firestore user add failed:', e); newUser.firestoreId = generateId(); }
+        const ref = db.ref('users').push();
+        await ref.set(newUser);
+        newUser.firestoreId = ref.key;
+      } catch(e) { console.warn('RTDB user add failed:', e); newUser.firestoreId = generateId(); }
     } else { newUser.firestoreId = generateId(); }
     users.push(newUser);
     saveLocal('users', users);
@@ -5443,7 +5454,7 @@ async function saveNewUser() {
 async function deleteUser(firestoreId, name) {
   if (!confirm(`Remove "${name}"? They won't be able to log in.`)) return;
   if (firebaseReady && db) {
-    try { await db.collection('users').doc(firestoreId).delete(); } catch(e) { console.warn('Firestore user delete failed:', e); }
+    try { await db.ref('users/' + firestoreId).remove(); } catch(e) { console.warn('RTDB user delete failed:', e); }
   }
   users = users.filter(u => u.firestoreId !== firestoreId);
   saveLocal('users', users);
