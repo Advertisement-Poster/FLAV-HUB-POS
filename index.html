@@ -2443,10 +2443,28 @@ async function loadInventoryFromFirestore() {
   try {
     const snap = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
     if (snap.empty) {
-      await withTimeout(seedInventory(), 8000);
-      const snap2 = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
-      if (!snap2.empty) {
-        inventory = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+      // Cloud is empty — push local data to Firestore if we have any
+      const localInv = loadLocal('inventory');
+      if (localInv && localInv.length && localInv[0].firestoreId !== 'local_0') {
+        console.log('Syncing local inventory to Firestore…');
+        showToast('☁️ Uploading local data to cloud…');
+        const batch = db.batch();
+        localInv.forEach(item => {
+          const { firestoreId, ...rest } = item;
+          const ref = firestoreId && !firestoreId.startsWith('local_') ? db.collection('inventory').doc(firestoreId) : db.collection('inventory').doc();
+          batch.set(ref, rest);
+        });
+        await withTimeout(batch.commit(), 10000);
+        const snap2 = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
+        if (!snap2.empty) {
+          inventory = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        }
+      } else {
+        await withTimeout(seedInventory(), 8000);
+        const snap2 = await withTimeout(db.collection('inventory').orderBy('name').get(), 8000);
+        if (!snap2.empty) {
+          inventory = snap2.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        }
       }
     } else {
       inventory = snap.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
@@ -2521,6 +2539,16 @@ async function loadOrdersFromFirestore() {
       console.error('Failed to load orders from Firestore:', e2);
     }
   }
+  // If cloud is empty but local has orders, sync them up
+  if (!firestoreOrders.length && orderHistory.length) {
+    console.log('Syncing local orders to Firestore…');
+    for (const order of orderHistory.slice(0, 100)) {
+      try {
+        const { firestoreId, ...rest } = order;
+        await db.collection('orders').add({ ...rest, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      } catch(e) { break; }
+    }
+  }
   if (firestoreOrders.length) {
     const fsIds = new Set(firestoreOrders.map(o => o.firestoreId));
     const localOnly = orderHistory.filter(o => (o.firestoreId && !fsIds.has(o.firestoreId)) || !o.firestoreId);
@@ -2576,6 +2604,9 @@ async function loadCategoriesFromFirestore() {
   const doc = await db.collection('settings').doc('categories').get();
   if (doc.exists && doc.data().list) {
     categories = doc.data().list;
+  } else if (categories.length) {
+    // Cloud empty, push local categories
+    await saveCategoriesToFirestore();
   }
 }
 
