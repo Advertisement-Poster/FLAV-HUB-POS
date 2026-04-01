@@ -2067,6 +2067,18 @@
   .page-info { font-size: 12px; color: var(--text3); }
 
   /* ===== KITCHEN DISPLAY ===== */
+  .kitchen-alert-btn {
+    padding: 6px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); font-size: 13px; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text2);
+  }
+  .kitchen-alert-btn:hover { border-color: var(--accent); }
+  .kitchen-alert-btn.muted { opacity: .5; }
+  @keyframes kitchen-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,140,0,0); }
+    50% { box-shadow: 0 0 18px 4px rgba(255,140,0,.35); }
+  }
+  .kitchen-card.new-order { animation: kitchen-flash .6s ease 3; }
   .kitchen-stats {
     display: flex; gap: 12px; flex-wrap: wrap; padding: 0 4px 10px;
   }
@@ -2541,6 +2553,9 @@
       <div class="kitchen-title">🍳 Kitchen Display</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <span style="font-size:12px;color:var(--text3);" id="kitchenOrderCount">0 active orders</span>
+        <button class="kitchen-alert-btn" id="kitchenAlertToggle" onclick="toggleKitchenAlert()" title="Toggle new-order sound alert">
+          <span id="kitchenAlertIcon">🔔</span> <span id="kitchenAlertLabel">Sound ON</span>
+        </button>
         <button class="export-btn" onclick="renderKitchen()">🔄 Refresh</button>
       </div>
     </div>
@@ -3406,16 +3421,29 @@ function startRealtimeListeners() {
   });
 
   // Kitchen Orders listener (cross-device sync)
+  _lastKitchenPendingCount = kitchenOrders.filter(o => o.kitchenStatus === 'pending').length;
   db.ref('kitchenOrders').on('value', snap => {
     const data = snap.val();
     if (data) {
       const fbKitchen = Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v }));
       fbKitchen.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+      const newPending = fbKitchen.filter(o => o.kitchenStatus === 'pending').length;
+      const gotNewOrder = newPending > _lastKitchenPendingCount;
+      _lastKitchenPendingCount = newPending;
       kitchenOrders = fbKitchen;
       saveLocal('kitchenOrders', kitchenOrders);
       renderKitchen();
       checkLowStock();
+      // Play alert if new pending orders arrived (from another device)
+      if (gotNewOrder) {
+        playKitchenAlert();
+        setTimeout(() => {
+          const firstCard = document.querySelector('.kitchen-card.status-pending');
+          if (firstCard) { firstCard.classList.add('new-order'); setTimeout(() => firstCard.classList.remove('new-order'), 2000); }
+        }, 50);
+      }
     } else {
+      _lastKitchenPendingCount = 0;
       kitchenOrders = [];
       saveLocal('kitchenOrders', kitchenOrders);
       renderKitchen();
@@ -3663,7 +3691,7 @@ function switchView(view, btn) {
   if (view === 'discounts') { (firebaseReady ? loadOrdersFromFirestore() : Promise.resolve()).then(() => renderDiscounts()); }
   if (view === 'report') { (firebaseReady ? loadOrdersFromFirestore() : Promise.resolve()).then(() => renderReport()); }
   if (view === 'inventory') renderInventory();
-  if (view === 'kitchen') renderKitchen();
+  if (view === 'kitchen') { renderKitchen(); updateKitchenAlertUI(); }
   if (view === 'monitoring') renderMonitoring();
   if (view === 'settings') {
     // Reset detail panel to placeholder
@@ -6591,6 +6619,54 @@ const ORDERS_PER_PAGE = 30;
 // =====================================================================
 // KITCHEN DISPLAY SYSTEM
 // =====================================================================
+
+// --- Kitchen Sound Alert ---
+let kitchenAlertEnabled = JSON.parse(localStorage.getItem('kainpos_kitchenAlert') ?? 'true');
+let _lastKitchenPendingCount = 0;
+
+function playKitchenAlert() {
+  if (!kitchenAlertEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .18, .36].forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880 + i * 220;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.15);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 800);
+  } catch (e) { console.warn('Kitchen beep failed:', e); }
+}
+
+function toggleKitchenAlert() {
+  kitchenAlertEnabled = !kitchenAlertEnabled;
+  localStorage.setItem('kainpos_kitchenAlert', JSON.stringify(kitchenAlertEnabled));
+  updateKitchenAlertUI();
+  if (kitchenAlertEnabled) playKitchenAlert();
+}
+
+function updateKitchenAlertUI() {
+  const btn = document.getElementById('kitchenAlertToggle');
+  const icon = document.getElementById('kitchenAlertIcon');
+  const label = document.getElementById('kitchenAlertLabel');
+  if (!btn) return;
+  if (kitchenAlertEnabled) {
+    icon.textContent = '🔔';
+    label.textContent = 'Sound ON';
+    btn.classList.remove('muted');
+  } else {
+    icon.textContent = '🔕';
+    label.textContent = 'Sound OFF';
+    btn.classList.add('muted');
+  }
+}
+
 let kitchenOrders = [];
 function addToKitchen(order) {
   kitchenOrders.unshift({ ...order, kitchenStatus: 'pending', addedAt: Date.now() });
@@ -6603,6 +6679,12 @@ function addToKitchen(order) {
   saveLocal('kitchenOrders', kitchenOrders);
   syncKitchenToFirebase();
   renderKitchen();
+  playKitchenAlert();
+  // Flash the new card briefly
+  setTimeout(() => {
+    const firstCard = document.querySelector('.kitchen-card');
+    if (firstCard) { firstCard.classList.add('new-order'); setTimeout(() => firstCard.classList.remove('new-order'), 2000); }
+  }, 50);
 }
 
 function renderKitchen() {
