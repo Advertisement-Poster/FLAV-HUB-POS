@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f0e0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KAIN POS">
+<link rel="manifest" href="manifest.json">
 <title id="app-title">KAIN POS — Restaurant Point of Sale</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -2357,6 +2362,7 @@ let businessConfig = { name: 'KAIN POS', owner: '', phone: '', email: '', addres
 let pendingImageUrl = '';
 let selectedEmoji = '🍽️';
 let editingProductId = null;
+let pendingOrders = []; // offline queue
 
 // Discount state
 let activeDiscount = null; // null | 'senior' | 'manual'
@@ -2630,6 +2636,102 @@ async function loadUsersFromFirestore() {
     if (e.code === 'PERMISSION_DENIED') showToast('🔴 Cannot load users — check Firebase rules');
     return users;
   }
+}
+
+// =====================================================================
+// OFFLINE ORDER QUEUE — auto-sync pending orders when back online
+// =====================================================================
+function loadPendingOrders() {
+  pendingOrders = loadLocal('pendingOrders') || [];
+}
+
+function savePendingOrders() {
+  saveLocal('pendingOrders', pendingOrders);
+}
+
+async function syncPendingOrders() {
+  if (!firebaseReady || !pendingOrders.length) return;
+  const toSync = [...pendingOrders];
+  let synced = 0;
+  for (const order of toSync) {
+    try {
+      const ref = db.ref('orders').push();
+      await ref.set({ ...order, createdAt: firebase.database.ServerValue.TIMESTAMP, _syncedAt: Date.now() });
+      order.firestoreId = ref.key;
+      pendingOrders = pendingOrders.filter(o => o._localTime !== order._localTime);
+      synced++;
+    } catch(e) { console.warn('Pending order sync failed:', e); break; }
+  }
+  savePendingOrders();
+  if (synced > 0) showToast(`☁️ Synced ${synced} offline order${synced > 1 ? 's' : ''}`);
+}
+
+// Listen for online/offline
+window.addEventListener('online', () => {
+  showToast('🟢 Back online');
+  syncPendingOrders();
+});
+window.addEventListener('offline', () => {
+  showToast('🔴 You are offline — orders will save locally');
+});
+
+// =====================================================================
+// REAL-TIME LISTENERS — live sync across devices
+// =====================================================================
+let rtListenersActive = false;
+
+function startRealtimeListeners() {
+  if (!firebaseReady || rtListenersActive) return;
+  rtListenersActive = true;
+
+  // Inventory listener
+  db.ref('inventory').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      inventory = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
+      inventory.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      saveLocal('inventory', inventory);
+      categories = [...new Set(inventory.map(i => i.cat))];
+      saveLocal('categories', categories);
+      renderCategories(); renderMenu();
+      if (document.getElementById('view-inventory')?.style.display !== 'none') renderInventory();
+    }
+  });
+
+  // Orders listener
+  db.ref('orders').limitToLast(200).on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      const rtdbOrders = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
+      rtdbOrders.sort((a, b) => {
+        const da = a._localTime ? new Date(a._localTime) : new Date(a.createdAt || 0);
+        const db2 = b._localTime ? new Date(b._localTime) : new Date(b.createdAt || 0);
+        return db2 - da;
+      });
+      const fsIds = new Set(rtdbOrders.map(o => o.firestoreId));
+      const localOnly = orderHistory.filter(o => (o.firestoreId && !fsIds.has(o.firestoreId)) || !o.firestoreId);
+      orderHistory = [...rtdbOrders, ...localOnly];
+      saveLocal('orders', orderHistory);
+    }
+  });
+
+  // Users listener
+  db.ref('users').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      users = Object.entries(data).map(([k, v]) => ({ firestoreId: k, ...v }));
+      users.sort((a, b) => (a.role || '').localeCompare(b.role || ''));
+      saveLocal('users', users);
+    }
+  });
+}
+
+function stopRealtimeListeners() {
+  if (!db || !rtListenersActive) return;
+  db.ref('inventory').off();
+  db.ref('orders').off();
+  db.ref('users').off();
+  rtListenersActive = false;
 }
 
 // =====================================================================
@@ -3320,8 +3422,14 @@ function confirmOrder() {
     _localTime: now.toISOString(),
   };
 
-  // Fire-and-forget saves — don't block success UI
-  Promise.all([...stockUpdates, saveOrderToFirestore(order)]).catch(e => console.error('Save error:', e));
+  // Fire-and-forget saves — queue if offline
+  if (firebaseReady && navigator.onLine) {
+    Promise.all([...stockUpdates, saveOrderToFirestore(order)]).catch(e => console.error('Save error:', e));
+  } else {
+    pendingOrders.push(order);
+    savePendingOrders();
+    console.log('Order queued for offline sync');
+  }
   orderHistory.unshift(order);
   saveLocal('orders', orderHistory);
   saveLocal('inventory', inventory);
@@ -5467,6 +5575,7 @@ async function deleteUser(firestoreId, name) {
 // =====================================================================
 async function appInit() {
   loadFromLocalFallback();
+  loadPendingOrders();
   showLoader('Connecting to server…');
   try {
     await initFirebase();
@@ -5481,9 +5590,13 @@ async function appInit() {
           seedDefaultAdmin().catch(e => console.warn('Seed admin failed:', e))
         ]), 12000);
       } catch(e) {
-        console.warn('Firestore load timed out, using local data:', e);
+        console.warn('Firebase load timed out, using local data:', e);
         showToast('⚠️ Server slow — using cached data');
       }
+      // Start real-time listeners for live sync across devices
+      startRealtimeListeners();
+      // Sync any orders made while offline
+      syncPendingOrders();
       renderCategories(); renderMenu();
     } else {
       await seedDefaultAdmin();
@@ -5493,6 +5606,8 @@ async function appInit() {
     await seedDefaultAdmin();
   }
   hideLoader();
+  // Register Service Worker for offline support
+  registerServiceWorker();
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-username').focus();
 }
@@ -5517,6 +5632,39 @@ function loadFromLocalFallback() {
   }
   applyBusinessConfig();
 }
+
+// =====================================================================
+// SERVICE WORKER REGISTRATION
+// =====================================================================
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      console.log('Service Worker registered, scope:', reg.scope);
+    }).catch(e => console.warn('SW registration failed:', e));
+  }
+}
+
+// PWA Install Prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install button
+  const btn = document.createElement('button');
+  btn.id = 'pwa-install-btn';
+  btn.innerHTML = '📲 Install App';
+  btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 18px;border-radius:12px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+  btn.onclick = async () => {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') showToast('✅ App installed!');
+    deferredPrompt = null;
+    btn.remove();
+  };
+  document.body.appendChild(btn);
+  // Auto-hide after 15 seconds
+  setTimeout(() => btn.remove(), 15000);
+});
 
 appInit();
 </script>
