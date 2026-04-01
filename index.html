@@ -2005,6 +2005,18 @@
     transition: all .2s;
   }
   .void-btn:hover { background: rgba(var(--red-rgb),.15); border-color: var(--red); }
+  .del-order-btn {
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--red-rgb),.2);
+    background: rgba(var(--red-rgb),.06);
+    color: var(--red);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    vertical-align: middle;
+  }
+  .del-order-btn:hover { background: rgba(var(--red-rgb),.18); border-color: var(--red); }
 
   /* ===== VOID AUTH MODAL ===== */
   .void-modal-overlay {
@@ -2956,6 +2968,8 @@
 <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 <!-- Firebase SDK (v9 compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <script>
@@ -2972,6 +2986,11 @@ const FIREBASE_CONFIG = {
   appId:             "1:149545019847:web:c9440c46ab2e97e6c1d1e2",
   measurementId:     "G-RGG03D8HTG"
 };
+
+// =====================================================================
+// APP CHECK — paste your reCAPTCHA v3 Site Key here
+// =====================================================================
+const RECAPTCHA_V3_SITE_KEY = 'YOUR_RECAPTCHA_V3_SITE_KEY_HERE';
 
 // =====================================================================
 // DEFAULT SEED DATA — loaded when no products exist yet
@@ -3073,6 +3092,13 @@ async function initFirebase() {
   }
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
+    // Activate App Check — only your website can access Firebase
+    if (RECAPTCHA_V3_SITE_KEY && RECAPTCHA_V3_SITE_KEY !== 'YOUR_RECAPTCHA_V3_SITE_KEY_HERE') {
+      const appCheck = firebase.appCheck();
+      appCheck.activate(new firebase.appCheck.ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY), /* isTokenAutoRefresh */ true);
+    }
+    // Sign in anonymously so RTDB rules (auth != null) allow access
+    await withTimeout(firebase.auth().signInAnonymously(), 8000);
     db = firebase.database();
     // Test connectivity with a real write
     await withTimeout(db.ref('_test/ping').set({ t: Date.now() }), 8000);
@@ -3378,6 +3404,49 @@ function startRealtimeListeners() {
       saveLocal('users', users);
     }
   });
+
+  // Kitchen Orders listener (cross-device sync)
+  db.ref('kitchenOrders').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      const fbKitchen = Object.entries(data).map(([k, v]) => ({ _fbKey: k, ...v }));
+      fbKitchen.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+      kitchenOrders = fbKitchen;
+      saveLocal('kitchenOrders', kitchenOrders);
+      renderKitchen();
+      checkLowStock();
+    } else {
+      kitchenOrders = [];
+      saveLocal('kitchenOrders', kitchenOrders);
+      renderKitchen();
+    }
+  });
+
+  // Categories listener
+  db.ref('settings/categories').on('value', snap => {
+    if (snap.exists() && Array.isArray(snap.val())) {
+      categories = snap.val();
+      saveLocal('categories', categories);
+      renderCategories(); renderMenu();
+    }
+  });
+
+  // Business Config listener
+  db.ref('settings/business').on('value', snap => {
+    if (snap.exists()) {
+      Object.assign(businessConfig, snap.val());
+      saveLocal('business', businessConfig);
+      applyBusinessConfig();
+    }
+  });
+
+  // Cloudinary Config listener
+  db.ref('settings/cloudinary').on('value', snap => {
+    if (snap.exists()) {
+      cloudinaryConfig = snap.val();
+      saveLocal('cloudinary', cloudinaryConfig);
+    }
+  });
 }
 
 function stopRealtimeListeners() {
@@ -3385,6 +3454,10 @@ function stopRealtimeListeners() {
   db.ref('inventory').off();
   db.ref('orders').off();
   db.ref('users').off();
+  db.ref('kitchenOrders').off();
+  db.ref('settings/categories').off();
+  db.ref('settings/business').off();
+  db.ref('settings/cloudinary').off();
   rtListenersActive = false;
 }
 
@@ -3664,6 +3737,7 @@ function addToCart(firestoreId) {
   if (existing) { existing.qty++; }
   else { cart.push({ firestoreId: item.firestoreId, name: item.name, emoji: item.emoji, photo: item.photo || '', price: item.price, qty: 1 }); }
   renderCart();
+  syncCartToFirebase();
   showToast(`${item.emoji} Added!`);
 }
 
@@ -3673,6 +3747,7 @@ function changeQty(firestoreId, delta) {
   row.qty += delta;
   if (row.qty <= 0) cart = cart.filter(c => c.firestoreId !== firestoreId);
   renderCart();
+  syncCartToFirebase();
 }
 
 async function clearCart() {
@@ -3682,6 +3757,7 @@ async function clearCart() {
   cart = [];
   document.getElementById('tableInput').value = '';
   renderCart();
+  clearCartFromFirebase();
 }
 
 function renderCart() {
@@ -4155,6 +4231,7 @@ function confirmOrder() {
     closeCheckout();
     cart = [];
     document.getElementById('tableInput').value = '';
+    clearCartFromFirebase();
     renderCart();
     renderMenu();
   };
@@ -5301,11 +5378,12 @@ function renderOrders() {
   const start = (ordersPage - 1) * ORDERS_PER_PAGE;
   const pageOrders = filteredOrders.slice(start, start + ORDERS_PER_PAGE);
   const canVoid = currentUser && ['admin','manager','supervisor'].includes(currentUser.role);
+  const canDelete = currentUser && ['admin','manager'].includes(currentUser.role);
 
   el.innerHTML = `
     <table class="orders-table">
       <thead><tr>
-        <th>Order ID</th><th>Table</th><th>Items</th><th>Discount</th><th>Payment</th><th>Time</th><th>Total</th><th>Status</th>${canVoid ? '<th>Action</th>' : ''}
+        <th>Order ID</th><th>Table</th><th>Items</th><th>Discount</th><th>Payment</th><th>Time</th><th>Total</th><th>Status</th>${(canVoid || canDelete) ? '<th>Action</th>' : ''}
       </tr></thead>
       <tbody>
         ${pageOrders.map(o => {
@@ -5316,6 +5394,10 @@ function renderOrders() {
           const statusBadge = isVoided
             ? `<span class="badge-voided" title="Voided by ${esc(o.voidedBy||'')}&#10;Reason: ${esc(o.voidReason||'')}">Voided</span>`
             : `<span class="badge-paid">Paid</span>`;
+          let actionHtml = '';
+          if (canVoid && !isVoided) actionHtml += `<button class="void-btn" onclick="event.stopPropagation();openVoidModal('${o.id}')">🚫 Void</button> `;
+          if (canVoid && isVoided) actionHtml += `<span style="font-size:10px;color:var(--text3);">${esc(o.voidReason||'')}</span> `;
+          if (canDelete) actionHtml += `<button class="del-order-btn" onclick="event.stopPropagation();deleteOrderFromHistory('${o.id}')">🗑️</button>`;
           return `
           <tr style="cursor:pointer;${isVoided ? 'opacity:.6;' : ''}" onclick="reprintReceipt('${o.id}')" title="Click to reprint receipt">
             <td><span class="order-id">${esc(o.id)}</span></td>
@@ -5326,7 +5408,7 @@ function renderOrders() {
             <td style="color:var(--text3);font-size:12px;">${esc(o.time)}</td>
             <td><span class="order-total${isVoided ? '" style="text-decoration:line-through;opacity:.5' : ''}">₱${o.total.toLocaleString('en',{minimumFractionDigits:2})}</span></td>
             <td>${statusBadge}</td>
-            ${canVoid ? `<td>${!isVoided ? `<button class="void-btn" onclick="event.stopPropagation();openVoidModal('${o.id}')">🚫 Void</button>` : `<span style="font-size:10px;color:var(--text3);">${esc(o.voidReason||'')}</span>`}</td>` : ''}
+            ${(canVoid || canDelete) ? `<td>${actionHtml}</td>` : ''}
           </tr>`;
         }).join('')}
       </tbody>
@@ -6070,6 +6152,8 @@ function onLoginSuccess() {
   document.getElementById('logout-btn').style.display = 'block';
   // Apply tab visibility
   applyRoleUI();
+  // Load cart from Firebase if available
+  loadCartFromFirebase();
   // Render
   renderCategories(); renderMenu(); renderCart();
 }
@@ -6077,7 +6161,7 @@ function onLoginSuccess() {
 function applyRoleUI() {
   const perms = getUserPerms(currentUser);
   // Show/hide tabs
-  ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','settings'].forEach(tab => {
+  ['pos','sales','dailysales','weeklysales','monthlysales','orders','discounts','report','inventory','kitchen','monitoring','settings'].forEach(tab => {
     const el = document.getElementById(`tab-${tab}`);
     if (el) el.style.display = perms.includes(tab) ? '' : 'none';
   });
@@ -6465,6 +6549,39 @@ async function confirmVoidOrder() {
   showToast(`🚫 Order ${pendingVoidOrderId} voided`);
 }
 
+// Delete order permanently from history (admin/manager only)
+async function deleteOrderFromHistory(orderId) {
+  if (!currentUser || !['admin','manager'].includes(currentUser.role)) {
+    showToast('⛔ Only admin or manager can delete orders.'); return;
+  }
+  showConfirm(`🗑️ Permanently delete order <b>${esc(orderId)}</b>?<br><span style="font-size:13px;color:var(--text3);">This will remove it from all records. This cannot be undone.</span>`, async () => {
+    showSpinner('Deleting order…');
+    const idx = orderHistory.findIndex(o => o.id === orderId);
+    if (idx === -1) { hideSpinner(); showToast('Order not found.'); return; }
+    orderHistory.splice(idx, 1);
+    saveLocal('orders', orderHistory);
+    // Remove from Firebase
+    if (firebaseReady) {
+      try {
+        const snap = await db.ref('orders').orderByChild('id').equalTo(orderId).once('value');
+        const updates = {};
+        snap.forEach(child => { updates[child.key] = null; });
+        if (Object.keys(updates).length) await db.ref('orders').update(updates);
+      } catch(e) { console.warn('Firebase delete failed:', e); }
+    }
+    // Also remove from kitchen orders if present
+    const ko = JSON.parse(localStorage.getItem('kainpos_kitchenOrders') || '{}');
+    if (ko.orders) {
+      ko.orders = ko.orders.filter(o => o.orderId !== orderId);
+      localStorage.setItem('kainpos_kitchenOrders', JSON.stringify(ko));
+      if (firebaseReady) syncKitchenToFirebase();
+    }
+    hideSpinner();
+    renderOrders();
+    showToast(`🗑️ Order ${esc(orderId)} permanently deleted`);
+  });
+}
+
 // =====================================================================
 // ORDER HISTORY PAGINATION
 // =====================================================================
@@ -6484,6 +6601,7 @@ function addToKitchen(order) {
     kitchenOrders = [...active, ...served.slice(0, 200 - active.length)];
   }
   saveLocal('kitchenOrders', kitchenOrders);
+  syncKitchenToFirebase();
   renderKitchen();
 }
 
@@ -6572,7 +6690,49 @@ function updateKitchenStatus(orderId, status) {
     }
     if (status === 'ready') showToast(`✅ ${ko.id} (${ko.table}) is READY!`);
     saveLocal('kitchenOrders', kitchenOrders);
+    syncKitchenToFirebase();
     renderKitchen();
+}
+
+// Sync kitchenOrders to Firebase
+function syncKitchenToFirebase() {
+  if (!firebaseReady) return;
+  const obj = {};
+  kitchenOrders.forEach((ko, i) => {
+    const key = ko._fbKey || (ko.id ? ko.id.replace('#', 'K') + '_' + i : 'K_' + i);
+    const clean = { ...ko };
+    delete clean._fbKey;
+    obj[key] = clean;
+  });
+  db.ref('kitchenOrders').set(obj).catch(e => console.warn('Kitchen sync failed:', e));
+}
+
+// Sync cart to Firebase (per-user session)
+function syncCartToFirebase() {
+  if (!firebaseReady || !currentUser) return;
+  const cartData = { items: cart, table: document.getElementById('tableInput')?.value || '', updatedAt: Date.now() };
+  db.ref('carts/' + currentUser.username).set(cartData).catch(e => console.warn('Cart sync failed:', e));
+}
+
+// Load cart from Firebase for current user
+function loadCartFromFirebase() {
+  if (!firebaseReady || !currentUser) return;
+  db.ref('carts/' + currentUser.username).once('value').then(snap => {
+    if (snap.exists()) {
+      const data = snap.val();
+      if (data.items && Array.isArray(data.items) && data.items.length) {
+        cart = data.items;
+        if (data.table) document.getElementById('tableInput').value = data.table;
+        renderCart();
+      }
+    }
+  }).catch(e => console.warn('Cart load failed:', e));
+}
+
+// Clear cart from Firebase on checkout/clear
+function clearCartFromFirebase() {
+  if (!firebaseReady || !currentUser) return;
+  db.ref('carts/' + currentUser.username).remove().catch(e => console.warn('Cart clear failed:', e));
 }
 
 // Live-tick kitchen timers every second
@@ -6790,9 +6950,12 @@ async function importBackupFile(event) {
         await Promise.all([
           db.ref('inventory').set({}),
           db.ref('orders').set({}),
-          db.ref('categories').set(categories),
+          db.ref('settings/categories').set(categories),
           db.ref('settings/business').set(businessConfig),
+          db.ref('settings/cloudinary').set(cloudinaryConfig),
         ]);
+        // Sync kitchen orders
+        syncKitchenToFirebase();
         for (const item of inventory) {
           await db.ref('inventory/' + item.firestoreId).set(item);
         }
